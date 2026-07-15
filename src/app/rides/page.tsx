@@ -13,6 +13,7 @@ import { Reveal } from "@/components/Reveal";
 import { pageMetadata, ogImageForProgram } from "@/lib/seo";
 import { AlbumSection } from "@/components/AlbumSection";
 import { Board } from "@/components/Board";
+import { InfoTip } from "@/components/InfoTip";
 
 export const dynamic = "force-dynamic";
 
@@ -130,7 +131,7 @@ export default async function RidesPage({
               alt={brand.name}
               width={320}
               height={320}
-              className="ds-float-slow"
+              className="ds-float-slow ds-ride-logo"
               style={{
                 width: "min(320px, 72vw)",
                 height: "auto",
@@ -188,6 +189,10 @@ export default async function RidesPage({
                 }}
               >
                 🚳 No-drop
+                <InfoTip
+                  label="What does no-drop mean?"
+                  text="No-drop means nobody gets left behind — we regroup and wait for slower riders, so you always have the group in sight."
+                />
               </span>
               <span
                 className="ds-chip"

@@ -282,6 +282,31 @@ body {
   opacity: 1;
   background: rgba(43, 33, 24, 0.1);
 }
+.ds-topnav .ds-brand-home {
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.ds-ride-logo {
+  display: block;
+}
+@media (max-width: 640px) {
+  .ds-ride-logo {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+.ds-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 @media (max-width: 640px) {
   .ds-topnav .ds-nav-link {
     padding: 9px 10px;
@@ -289,6 +314,9 @@ body {
   }
   .ds-topnav .ds-brand-word {
     display: none;
+  }
+  .ds-topnav .ds-brand-home {
+    display: inline-flex;
   }
 }
 

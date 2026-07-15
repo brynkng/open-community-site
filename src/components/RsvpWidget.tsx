@@ -24,6 +24,12 @@ const PARTY_SIZES = [1, 2, 3, 4, 5, 6];
  * party size / name on top locally so the count feels live without a full
  * page reload. `rsvpAction` doesn't currently revalidate the page, so a
  * refresh is still the source of truth.
+ *
+ * RSVPs are anonymous (no server-side per-person dedupe), so to keep the same
+ * device from RSVPing twice we remember a successful submit in `localStorage`
+ * under a per-event key and, on a return visit, swap the form for an "already
+ * in" confirmation. It's a soft UX guard, not real enforcement — clearing
+ * storage or using another device lets someone RSVP again, which is fine.
  */
 export function RsvpWidget({
   kind,
@@ -40,6 +46,7 @@ export function RsvpWidget({
   prompt?: string;
 }) {
   const brand = brandForKind(kind);
+  const storageKey = `ss-rsvp-${kind}-${refId}`;
   const [state, action, pending] = useActionState<FormState, FormData>(
     rsvpAction,
     null,
@@ -50,7 +57,20 @@ export function RsvpWidget({
   const [email, setEmail] = useState("");
   const [partySize, setPartySize] = useState(1);
   const [quickDone, setQuickDone] = useState(false);
+  const [alreadyRsvped, setAlreadyRsvped] = useState(false);
   const [popKey, setPopKey] = useState(0);
+
+  // On mount, restore an "already RSVP'd" flag from localStorage so a refresh
+  // or return visit shows the confirmation instead of inviting a duplicate
+  // RSVP for the same event. Runs only client-side (localStorage is undefined
+  // during SSR), so the form paints first and briefly flips to "in" — fine.
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(storageKey)) setAlreadyRsvped(true);
+    } catch {
+      // localStorage unavailable (e.g. private mode / blocked) — skip the guard.
+    }
+  }, [storageKey]);
 
   const [extraHeadcount, setExtraHeadcount] = useState(0);
   const [extraNames, setExtraNames] = useState<string[]>([]);
@@ -76,8 +96,16 @@ export function RsvpWidget({
         setEmail("");
         setPartySize(1);
       }
+      // Remember this device RSVP'd so a later visit shows the confirmation
+      // rather than the form (soft duplicate-RSVP guard).
+      try {
+        localStorage.setItem(storageKey, String(Date.now()));
+      } catch {
+        // ignore — the in-session flag below still hides the form for now.
+      }
+      setAlreadyRsvped(true);
     }
-  }, [state]);
+  }, [state, storageKey]);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     const submitter = (e.nativeEvent as SubmitEvent)
@@ -132,137 +160,162 @@ export function RsvpWidget({
         </span>
       </div>
 
-      <form onSubmit={handleSubmit} action={action} style={{ marginTop: 14 }}>
-        <input type="hidden" name="kind" value={kind} />
-        <input type="hidden" name="refId" value={refId} />
-        <TurnstileWidget onVerifyAction={setToken} className="mb-3" />
-
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            alignItems: "center",
-            margin: "0 0 6px",
-            flexWrap: "wrap",
-          }}
-        >
-          <button
-            type="submit"
-            name="quick"
-            value="true"
-            disabled={!canSubmit || quickDone}
-            className="ds-btn ghost"
-            style={{
-              color: quickDone
-                ? "#fff"
-                : `var(--brand-accent, ${brand.accent})`,
-              background: quickDone
-                ? `var(--brand-accent, ${brand.accent})`
-                : "transparent",
-              minWidth: 120,
-            }}
-            aria-pressed={quickDone}
-          >
-            <span
-              key={popKey}
-              className="ds-pop"
-              style={{ display: "inline-block" }}
-            >
-              👍
-            </span>
-            {quickDone ? "I'm in!" : "Quick yes"}
-          </button>
-          <span style={{ color: "var(--ds-muted)", fontSize: 14 }}>
-            no name needed — or…
-          </span>
-        </div>
-
-        <div
-          style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}
-        >
-          <input
-            className="ds-field"
-            style={{ flex: "2 1 160px" }}
-            placeholder="Your name"
-            name="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <select
-            className="ds-field"
-            style={{ flex: "1 1 110px", maxWidth: 150 }}
-            name="partySize"
-            value={partySize}
-            onChange={(e) => setPartySize(Number(e.target.value))}
-          >
-            {PARTY_SIZES.map((n) => (
-              <option key={n} value={n}>
-                {n === 1 ? "Just me" : `${n} people`}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <input
-            className="ds-field"
-            type="email"
-            placeholder="Email (optional — for a reminder)"
-            name="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <button
-          type="submit"
-          name="quick"
-          value="false"
-          disabled={!canSubmit}
-          className="ds-btn"
-          style={{
-            background: `var(--brand-accent, ${brand.accent})`,
-            marginTop: 10,
-            width: "100%",
-          }}
-        >
-          {pending ? "Sending…" : "RSVP"}
-        </button>
-
-        {!token && (
-          <p
-            style={{
-              margin: "8px 0 0",
-              fontSize: 12.5,
-              color: "var(--ds-muted)",
-            }}
-          >
-            Verifying you&rsquo;re human… hang tight.
-          </p>
-        )}
-        {state && !state.ok && (
-          <p
-            style={{
-              margin: "10px 0 0",
-              fontSize: 14,
-              color: "#b42318",
-              fontWeight: 600,
-            }}
-          >
-            {state.message}
-          </p>
-        )}
-        {state?.ok && (
+      {alreadyRsvped ? (
+        <div style={{ marginTop: 16 }}>
           <p
             className="ds-pop"
             style={{
               color: `var(--brand-accent, ${brand.accent})`,
               fontWeight: 700,
-              margin: "10px 0 0",
+              fontSize: 16,
+              margin: 0,
             }}
           >
-            {state.message}
+            ✓ You&rsquo;re in for this one — see you there!
           </p>
-        )}
-      </form>
+          <p
+            style={{
+              margin: "6px 0 0",
+              fontSize: 13,
+              color: "var(--ds-muted)",
+            }}
+          >
+            You&rsquo;ve already RSVP&rsquo;d from this device.
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} action={action} style={{ marginTop: 14 }}>
+          <input type="hidden" name="kind" value={kind} />
+          <input type="hidden" name="refId" value={refId} />
+          <TurnstileWidget onVerifyAction={setToken} className="mb-3" />
+
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              margin: "0 0 6px",
+              flexWrap: "wrap",
+            }}
+          >
+            <button
+              type="submit"
+              name="quick"
+              value="true"
+              disabled={!canSubmit || quickDone}
+              className="ds-btn ghost"
+              style={{
+                color: quickDone
+                  ? "#fff"
+                  : `var(--brand-accent, ${brand.accent})`,
+                background: quickDone
+                  ? `var(--brand-accent, ${brand.accent})`
+                  : "transparent",
+                minWidth: 120,
+              }}
+              aria-pressed={quickDone}
+            >
+              <span
+                key={popKey}
+                className="ds-pop"
+                style={{ display: "inline-block" }}
+              >
+                👍
+              </span>
+              {quickDone ? "I'm in!" : "Quick yes"}
+            </button>
+            <span style={{ color: "var(--ds-muted)", fontSize: 14 }}>
+              no name needed — or…
+            </span>
+          </div>
+
+          <div
+            style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}
+          >
+            <input
+              className="ds-field"
+              style={{ flex: "2 1 160px" }}
+              placeholder="Your name"
+              name="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <select
+              className="ds-field"
+              style={{ flex: "1 1 110px", maxWidth: 150 }}
+              name="partySize"
+              value={partySize}
+              onChange={(e) => setPartySize(Number(e.target.value))}
+            >
+              {PARTY_SIZES.map((n) => (
+                <option key={n} value={n}>
+                  {n === 1 ? "Just me" : `${n} people`}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <input
+              className="ds-field"
+              type="email"
+              placeholder="Email (optional — for a reminder)"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <button
+            type="submit"
+            name="quick"
+            value="false"
+            disabled={!canSubmit}
+            className="ds-btn"
+            style={{
+              background: `var(--brand-accent, ${brand.accent})`,
+              marginTop: 10,
+              width: "100%",
+            }}
+          >
+            {pending ? "Sending…" : "RSVP"}
+          </button>
+
+          {!token && (
+            <p
+              style={{
+                margin: "8px 0 0",
+                fontSize: 12.5,
+                color: "var(--ds-muted)",
+              }}
+            >
+              Verifying you&rsquo;re human… hang tight.
+            </p>
+          )}
+          {state && !state.ok && (
+            <p
+              style={{
+                margin: "10px 0 0",
+                fontSize: 14,
+                color: "#b42318",
+                fontWeight: 600,
+              }}
+            >
+              {state.message}
+            </p>
+          )}
+          {state?.ok && (
+            <p
+              className="ds-pop"
+              style={{
+                color: `var(--brand-accent, ${brand.accent})`,
+                fontWeight: 700,
+                margin: "10px 0 0",
+              }}
+            >
+              {state.message}
+            </p>
+          )}
+        </form>
+      )}
 
       {allNames.length > 0 && (
         <p
