@@ -175,9 +175,10 @@ export default async function AdminDashboard() {
         <h2 className="mb-3 text-lg font-bold">Saturday dinners</h2>
         <div className="space-y-2">
           {dinnerList.map((d, i) => (
-            <div
+            <Link
               key={d.id}
-              className="card flex items-center justify-between py-3"
+              href={`/admin/dinners/${d.id}`}
+              className="card flex items-center justify-between py-3 transition hover:shadow-md"
             >
               <div>
                 <p className="font-semibold">{d.title}</p>
@@ -188,7 +189,7 @@ export default async function AdminDashboard() {
               <p className="text-sm font-medium text-brand-dark">
                 {dinnerCounts[i]} coming
               </p>
-            </div>
+            </Link>
           ))}
           {dinnerList.length === 0 && (
             <p className="text-sm text-stone-500">No dinners yet.</p>

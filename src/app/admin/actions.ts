@@ -128,6 +128,40 @@ export async function createDinnerAction(
 }
 
 /**
+ * Update an existing (one-off or materialized) dinner's core details. Does not
+ * touch recurrence — editing a single date never re-creates a series.
+ */
+export async function updateDinnerAction(
+  _prev: AdminState,
+  formData: FormData,
+): Promise<AdminState> {
+  await requireAdmin();
+  const id = Number(formData.get("id"));
+  if (!id) return { ok: false, message: "Missing dinner." };
+  const date = String(formData.get("date") || "");
+  if (!date) return { ok: false, message: "Pick a date." };
+
+  await getDb()
+    .update(dinners)
+    .set({
+      title:
+        String(formData.get("title") || "").trim() ||
+        "Saturday Community Dinner",
+      date,
+      description: String(formData.get("description") || "") || null,
+      location: String(formData.get("location") || "") || null,
+      startTime: String(formData.get("startTime") || "") || null,
+      capacity: formData.get("capacity")
+        ? Number(formData.get("capacity"))
+        : null,
+    })
+    .where(eq(dinners.id, id));
+  revalidatePath("/admin");
+  revalidatePath("/dinner");
+  return { ok: true, message: "Dinner updated." };
+}
+
+/**
  * Create a Sunday ride, optionally with a cover image uploaded to R2. If
  * "Repeats weekly" is on, this creates a recurring series (the cover image is
  * reused on every generated ride) and materializes its upcoming instances;
@@ -447,6 +481,58 @@ export async function createTripAction(
   revalidatePath("/admin");
   revalidatePath("/trips");
   redirect(`/admin/trips/${trip.id}`);
+}
+
+/** Update an existing trip's core details, optionally replacing the cover image. */
+export async function updateTripAction(
+  _prev: AdminState,
+  formData: FormData,
+): Promise<AdminState> {
+  await requireAdmin();
+  const tripId = Number(formData.get("tripId"));
+  if (!tripId) return { ok: false, message: "Missing trip." };
+  const title = String(formData.get("title") || "").trim();
+  if (!title) return { ok: false, message: "Title is required." };
+
+  const db = getDb();
+  const [trip] = await db
+    .select()
+    .from(trips)
+    .where(eq(trips.id, tripId))
+    .limit(1);
+  if (!trip) return { ok: false, message: "Trip not found." };
+
+  // Replace the cover only when a new file is provided; keep the same key so
+  // the public URL is stable.
+  let imageKey = trip.imageKey;
+  const file = formData.get("image");
+  if (file instanceof File && file.size > 0) {
+    if (file.size > 8 * 1024 * 1024)
+      return { ok: false, message: "Image must be under 8 MB." };
+    const ext = file.type.includes("png") ? "png" : "jpg";
+    imageKey = `trips/${trip.slug}.${ext}`;
+    await env().MEDIA.put(imageKey, await file.arrayBuffer(), {
+      httpMetadata: { contentType: file.type || "image/jpeg" },
+    });
+  }
+
+  await db
+    .update(trips)
+    .set({
+      title,
+      destination: String(formData.get("destination") || "") || null,
+      description: String(formData.get("description") || "") || null,
+      tentativeWindow: String(formData.get("tentativeWindow") || "") || null,
+      estCost: String(formData.get("estCost") || "") || null,
+      imageKey,
+    })
+    .where(eq(trips.id, tripId));
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/trips/${tripId}`);
+  revalidatePath("/trips");
+  revalidatePath(`/trips/${trip.slug}`);
+  return { ok: true, message: "Trip details updated." };
 }
 
 /** Add one poll option (candidate date) to a trip. */
