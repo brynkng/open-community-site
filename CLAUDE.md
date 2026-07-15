@@ -35,6 +35,7 @@ agent (used by `/ce-brainstorm` and `/ce-plan`) searches it by frontmatter:
 - `programs-layer-architecture.md` — branded event series with no code (`kind` + `programId`)
 - `app-architecture-and-integrations.md` — App Router, server actions, auth, IG/Resend/R2/KV/cron
 - `coding-conventions.md` — patterns to follow when adding features
+- `developer-experience/bulk-sourcing-instagram-photos-to-r2.md` — pulling IG media via the feed API + hosting it in R2 with a committed manifest
 
 ## Stack
 
