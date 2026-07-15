@@ -360,8 +360,14 @@ body {
   max-width: min(440px, 44%);
 }
 @media (max-width: 639px) {
+  /* Portrait media in a widening panel crops top/bottom under cover; anchor to
+     the top so the logo (at the top of the frame) never gets cut off. */
   .ds-dinner-video {
     transform: none;
+    object-position: center top;
+  }
+  .ds-dinner-poster {
+    background-position: center top;
   }
   .ds-dinner-scrim {
     background: linear-gradient(
