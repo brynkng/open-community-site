@@ -1,10 +1,12 @@
-import Link from "next/link";
 import { and, asc, desc, eq, gte } from "drizzle-orm";
 import { getDb } from "@/db";
 import { dinners, rides, trips, type Program } from "@/db/schema";
 import { getActivePrograms } from "@/lib/programs";
 import { formatDate } from "@/lib/utils";
-import { SubscribeForm } from "@/components/SubscribeForm";
+import { brandForProgram, type BrandKey } from "@/lib/brands";
+import { LandingPanel } from "@/components/LandingPanel";
+import { DinnerPanel } from "@/components/DinnerPanel";
+import type { PhotoData } from "@/components/Photo";
 
 export const dynamic = "force-dynamic";
 
@@ -12,132 +14,216 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-type Item = { href: string; title: string; sub: string };
+/** Real photos to drift on each non-dinner brand panel (trips has none yet — gradient placeholders fill in). */
+const DRIFT_PHOTOS: Record<BrandKey, PhotoData[]> = {
+  ss: [],
+  nb: [
+    {
+      src: "/photos/ride-staging.jpg",
+      cap: "Staging up on Mifflin St",
+      brand: "nb",
+    },
+    {
+      src: "/photos/ride-coffee.jpg",
+      cap: "Coffee & sandwiches, The Landing",
+      brand: "nb",
+    },
+    {
+      src: "/photos/ride-fallen-tree.jpg",
+      cap: "Storm blocked the trail",
+      brand: "nb",
+    },
+  ],
+  ft: [
+    { cap: "Scouting the campsite", brand: "ft", hue: 110 },
+    { cap: "Batona Trail walk", brand: "ft", hue: 130 },
+    { cap: "Campfire planning", brand: "ft", hue: 95 },
+  ],
+};
 
-/** Fetch the next few things to show for a program's homepage section. */
-async function itemsForProgram(p: Program): Promise<{ items: Item[]; cta: { href: string; label: string } }> {
+/** "Warm" copy variant (KTD/plan: ship warm as the default, no copy-variant switcher). */
+const LANDING_COPY: Record<
+  Program["kind"],
+  {
+    defaultWhen: string;
+    headline: string;
+    sub: string;
+    cta: string;
+    panelBg: string;
+  }
+> = {
+  dinner: {
+    defaultWhen: "Every Saturday · 6 PM",
+    headline: "Pizza night. Every Saturday. You’re invited.",
+    sub: "Wood-fired pies from the Ooni, a long table, and whoever shows up. Free, always. Bring nothing but yourself.",
+    cta: "See this Saturday",
+    panelBg: "linear-gradient(160deg, #A8332A 0%, #7E241D 100%)",
+  },
+  ride: {
+    defaultWhen: "Every Sunday · 10 AM",
+    headline: "Slow miles, good coffee, Sunday mornings.",
+    sub: "An easy 10 miles up the Schuylkill to Manayunk, coffee on Main Street, and 10 miles home. All bikes, all paces.",
+    cta: "Join Sunday’s ride",
+    panelBg: "linear-gradient(160deg, #1F3A63 0%, #14294A 100%)",
+  },
+  trip: {
+    defaultWhen: "A few times a season",
+    headline: "Sometimes we leave the sidewalk behind.",
+    sub: "Camping in the Pine Barrens, waterfall hikes, day trips. Planned together, open to everyone, free unless we say otherwise.",
+    cta: "See upcoming trips",
+    panelBg: "linear-gradient(160deg, #2E5339 0%, #1F3B28 100%)",
+  },
+};
+
+function programHref(p: Program): string {
+  if (p.kind === "dinner") return `/dinner?program=${p.slug}`;
+  if (p.kind === "ride") return `/rides?program=${p.slug}`;
+  return `/trips?program=${p.slug}`;
+}
+
+/** Computed "next up" caption per program, reusing the existing next-event data reads. */
+async function whenForProgram(p: Program): Promise<string | null> {
   const db = getDb();
   if (p.kind === "dinner") {
     const [d] = await db
       .select()
       .from(dinners)
-      .where(and(eq(dinners.programId, p.id), eq(dinners.status, "published"), gte(dinners.date, today())))
+      .where(
+        and(
+          eq(dinners.programId, p.id),
+          eq(dinners.status, "published"),
+          gte(dinners.date, today()),
+        ),
+      )
       .orderBy(asc(dinners.date))
       .limit(1);
-    const items = d
-      ? [{ href: `/dinner?program=${p.slug}`, title: d.title, sub: `${formatDate(d.date)}${d.startTime ? ` · ${d.startTime}` : ""}` }]
-      : [];
-    return { items, cta: { href: `/dinner?program=${p.slug}`, label: "RSVP for dinner" } };
+    return d
+      ? `${formatDate(d.date)}${d.startTime ? ` · ${d.startTime}` : ""}`
+      : null;
   }
   if (p.kind === "ride") {
-    const list = await db
+    const [r] = await db
       .select()
       .from(rides)
-      .where(and(eq(rides.programId, p.id), eq(rides.status, "published"), gte(rides.date, today())))
+      .where(
+        and(
+          eq(rides.programId, p.id),
+          eq(rides.status, "published"),
+          gte(rides.date, today()),
+        ),
+      )
       .orderBy(asc(rides.date))
-      .limit(3);
-    return {
-      items: list.map((r) => ({
-        href: `/rides/${r.slug}`,
-        title: r.title,
-        sub: `${formatDate(r.date)}${r.startTime ? ` · ${r.startTime}` : ""}${r.distanceKm ? ` · ${r.distanceKm} km` : ""}`,
-      })),
-      cta: { href: `/rides?program=${p.slug}`, label: "See all rides" },
-    };
+      .limit(1);
+    return r
+      ? `${formatDate(r.date)}${r.startTime ? ` · ${r.startTime}` : ""}`
+      : null;
   }
   // trip
-  const list = await db
+  const [t] = await db
     .select()
     .from(trips)
     .where(and(eq(trips.programId, p.id), eq(trips.status, "published")))
     .orderBy(desc(trips.createdAt))
-    .limit(3);
-  return {
-    items: list.map((t) => ({
-      href: `/trips/${t.slug}`,
-      title: t.title,
-      sub: t.finalDate ? `Confirmed: ${formatDate(t.finalDate)}` : t.tentativeWindow || "Date TBD",
-    })),
-    cta: { href: `/trips?program=${p.slug}`, label: "See trips" },
-  };
+    .limit(1);
+  if (!t) return null;
+  return t.finalDate
+    ? `Confirmed: ${formatDate(t.finalDate)}`
+    : t.tentativeWindow || null;
 }
 
 export default async function Home() {
   const programs = await getActivePrograms();
-  const sections = await Promise.all(
-    programs.map(async (p) => ({ program: p, ...(await itemsForProgram(p)) })),
+  const panels = await Promise.all(
+    programs.map(async (program) => ({
+      program,
+      brand: brandForProgram(program),
+      when:
+        (await whenForProgram(program)) ??
+        LANDING_COPY[program.kind].defaultWhen,
+      copy: LANDING_COPY[program.kind],
+    })),
   );
 
   return (
-    <div className="space-y-14">
-      <section className="text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">
-          One community, many ways to show up.
-        </h1>
-        <p className="mx-auto mt-4 max-w-xl text-lg text-stone-600">
-          Free Saturday dinners, Sunday rides with Nomadic Bike Philly, and bigger trips we plan together.
-          Pick what&apos;s yours and RSVP.
-        </p>
-      </section>
-
-      {sections.map(({ program, items, cta }) => (
-        <section
-          key={program.id}
-          className="overflow-hidden rounded-3xl border bg-white"
-          style={{ borderColor: `${program.accentColor}33` }}
+    <div>
+      <header
+        className="ds-wrap"
+        style={{
+          padding:
+            "clamp(40px, 8vw, 90px) clamp(16px,4vw,40px) clamp(20px, 4vw, 44px)",
+          textAlign: "center",
+        }}
+      >
+        <p
+          className="ds-chip"
+          style={{ background: "rgba(43,33,24,.07)", marginBottom: 16 }}
         >
-          <div
-            className="flex items-center gap-4 p-6"
-            style={{ background: `linear-gradient(180deg, ${program.accentColor}14, transparent)` }}
-          >
-            {program.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={program.logoUrl} alt={program.name} className="h-16 w-16 rounded-full object-cover ring-2" style={{ boxShadow: `0 0 0 2px ${program.accentColor}` }} />
-            ) : (
-              <span className="flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold text-white" style={{ backgroundColor: program.accentColor }}>
-                {program.name.slice(0, 1)}
-              </span>
-            )}
-            <div>
-              <h2 className="text-2xl font-extrabold" style={{ color: program.accentColor }}>{program.name}</h2>
-              {program.tagline && <p className="text-sm text-stone-600">{program.tagline}</p>}
-            </div>
-          </div>
-
-          <div className="space-y-3 px-6 pb-6">
-            {items.length === 0 ? (
-              <p className="text-sm text-stone-500">Nothing scheduled yet — check back soon.</p>
-            ) : (
-              items.map((it) => (
-                <Link key={it.href + it.title} href={it.href} className="flex items-center justify-between rounded-xl border border-black/5 px-4 py-3 transition hover:bg-stone-50">
-                  <div>
-                    <p className="font-semibold">{it.title}</p>
-                    <p className="text-sm text-stone-500">{it.sub}</p>
-                  </div>
-                  <span aria-hidden style={{ color: program.accentColor }}>→</span>
-                </Link>
-              ))
-            )}
-            <Link
-              href={cta.href}
-              className="mt-2 inline-flex min-h-11 items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-white transition"
-              style={{ backgroundColor: program.accentColor }}
-            >
-              {cta.label}
-            </Link>
-          </div>
-        </section>
-      ))}
-
-      <section id="newsletter" className="card mx-auto max-w-xl">
-        <h2 className="text-xl font-bold">Get the newsletter</h2>
-        <p className="mt-1 text-sm text-stone-600">
-          Occasional emails about upcoming dinners, rides, and bigger trips. No spam, unsubscribe anytime.
+          South Philly · est. on a stoop
         </p>
-        <div className="mt-4">
-          <SubscribeForm />
-        </div>
-      </section>
+        <h1
+          style={{
+            fontFamily: "var(--font-ft)",
+            fontWeight: 800,
+            fontSize: "clamp(34px, 6.4vw, 68px)",
+            letterSpacing: "-.015em",
+            color: "var(--ds-ink)",
+            margin: 0,
+          }}
+        >
+          One neighborhood.
+          <br />
+          Three ways to show up.
+        </h1>
+        <p
+          style={{
+            color: "var(--ds-muted)",
+            fontSize: "clamp(16px, 1.9vw, 19px)",
+            maxWidth: 560,
+            margin: "16px auto 0",
+          }}
+        >
+          Saturday dinners, Sunday rides, and the occasional trip out of town.
+          No memberships, no fees, no experience needed.
+        </p>
+      </header>
+
+      <div>
+        {panels.map(({ program, brand, when, copy }) =>
+          program.kind === "dinner" ? (
+            <div
+              key={program.id}
+              className="relative left-1/2 right-1/2 -mx-[50vw] w-screen"
+            >
+              <DinnerPanel
+                program={program}
+                brand={brand}
+                href={programHref(program)}
+                when={when}
+                headline={copy.headline}
+                sub={copy.sub}
+                cta={copy.cta}
+              />
+            </div>
+          ) : (
+            <div
+              key={program.id}
+              className="relative left-1/2 right-1/2 -mx-[50vw] w-screen"
+            >
+              <LandingPanel
+                program={program}
+                brand={brand}
+                href={programHref(program)}
+                when={when}
+                headline={copy.headline}
+                sub={copy.sub}
+                cta={copy.cta}
+                panelBg={copy.panelBg}
+                photos={DRIFT_PHOTOS[brand.brandKey]}
+              />
+            </div>
+          ),
+        )}
+      </div>
     </div>
   );
 }
