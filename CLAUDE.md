@@ -36,6 +36,7 @@ agent (used by `/ce-brainstorm` and `/ce-plan`) searches it by frontmatter:
 - `app-architecture-and-integrations.md` — App Router, server actions, auth, IG/Resend/R2/KV/cron
 - `coding-conventions.md` — patterns to follow when adding features
 - `developer-experience/bulk-sourcing-instagram-photos-to-r2.md` — pulling IG media via the feed API + hosting it in R2 with a committed manifest
+- `next-public-env-is-build-time-not-wrangler-runtime.md` — why `NEXT_PUBLIC_*` client vars must be in `.env.production`, not `wrangler.jsonc` vars (broke Turnstile twice)
 
 ## Stack
 
