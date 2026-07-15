@@ -41,7 +41,7 @@ export const OG_IMAGE_BY_KIND: Record<Program["kind"], string> = {
   trip: "/photos/dinner-group.jpg", // no dedicated trip photo exists yet
 };
 
-export const OG_IMAGE_DEFAULT = "/photos/dinner-group.jpg";
+export const OG_IMAGE_DEFAULT = "/brands/sidewalk-story-og.png";
 
 export function ogImageForKind(kind: Program["kind"]): string {
   return OG_IMAGE_BY_KIND[kind] ?? OG_IMAGE_DEFAULT;
@@ -67,9 +67,18 @@ type PageMetadataInput = {
  * Single factory every route's generateMetadata composes from — keeps
  * titles/cards consistent and the canonical rules in exactly one place.
  */
-export function pageMetadata({ title, description, path, kind, imagePath, imageUrl }: PageMetadataInput): Metadata {
+export function pageMetadata({
+  title,
+  description,
+  path,
+  kind,
+  imagePath,
+  imageUrl,
+}: PageMetadataInput): Metadata {
   const url = absoluteUrl(path);
-  const image = imageUrl ?? absoluteUrl(imagePath ?? (kind ? ogImageForKind(kind) : OG_IMAGE_DEFAULT));
+  const image =
+    imageUrl ??
+    absoluteUrl(imagePath ?? (kind ? ogImageForKind(kind) : OG_IMAGE_DEFAULT));
 
   return {
     title,
