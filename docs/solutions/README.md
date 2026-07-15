@@ -9,4 +9,5 @@ Durable learning docs that ground future `/ce-brainstorm` and `/ce-plan` work. T
 - [App architecture & integrations](./app-architecture-and-integrations.md) — App Router, server actions, auth, Instagram/Resend/R2/KV/cron.
 - [Coding conventions](./coding-conventions.md) — patterns to follow when adding features.
 - [Design prototype porting](./design-prototype-porting.md) — porting Claude Design (claude.ai/design) updates into the live app: handoff-snapshot diffing, `--ss-*`→`--brand-*` token mapping, inline-styles vs media queries.
+- [Video-background poster must be CSS-driven](./video-background-poster-must-be-css-driven.md) — a video hero's poster fallback must be an always-rendered CSS media-query element, not a JS-gated `<img>` or `<video poster>`, or the hero goes black before hydration (the `/dinner` black-hero bug).
 - [Bulk-sourcing IG photos to R2](./developer-experience/bulk-sourcing-instagram-photos-to-r2.md) — pulling a community's own Instagram media via the private feed API, Chrome/CDP download gotchas, and R2 hosting with a committed manifest.
