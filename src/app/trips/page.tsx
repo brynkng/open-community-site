@@ -103,7 +103,10 @@ export default async function TripsPage({
     <div data-brand={brand.brandKey} className="ds-page">
       <header
         className="ds-wrap"
-        style={{ padding: "clamp(20px,4vw,40px) 0 clamp(16px,3vw,28px)" }}
+        style={{
+          paddingTop: "clamp(20px,4vw,40px)",
+          paddingBottom: "clamp(16px,3vw,28px)",
+        }}
       >
         <Reveal style={{ maxWidth: 640 }}>
           <div
@@ -170,7 +173,7 @@ export default async function TripsPage({
 
       <section
         className="ds-wrap"
-        style={{ padding: "10px 0 50px", display: "grid", gap: 22 }}
+        style={{ paddingTop: 10, paddingBottom: 50, display: "grid", gap: 22 }}
       >
         {published.length === 0 ? (
           <div
@@ -235,14 +238,14 @@ export default async function TripsPage({
 
       {programId && (
         <>
-          <section className="ds-wrap" style={{ padding: "0 0 50px" }}>
+          <section className="ds-wrap" style={{ paddingBottom: 50 }}>
             <AlbumSection
               programId={programId}
               kind="trip"
               albums={albumSection}
             />
           </section>
-          <section className="ds-wrap" style={{ padding: "0 0 60px" }}>
+          <section className="ds-wrap" style={{ paddingBottom: 60 }}>
             <Board
               programId={programId}
               kind="trip"

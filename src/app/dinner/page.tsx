@@ -89,7 +89,8 @@ export default async function DinnerPage({
           as="header"
           className="ds-wrap"
           style={{
-            padding: "clamp(36px, 7vw, 80px) 0 clamp(20px,3vw,36px)",
+            paddingTop: "clamp(36px, 7vw, 80px)",
+            paddingBottom: "clamp(20px,3vw,36px)",
             textAlign: "center",
           }}
         >
@@ -131,14 +132,14 @@ export default async function DinnerPage({
 
         {programId && (
           <>
-            <div className="ds-wrap" style={{ padding: "0 0 50px" }}>
+            <div className="ds-wrap" style={{ paddingBottom: 50 }}>
               <AlbumSection
                 programId={programId}
                 kind="dinner"
                 albums={albumSection}
               />
             </div>
-            <div className="ds-wrap" style={{ padding: "0 0 60px" }}>
+            <div className="ds-wrap" style={{ paddingBottom: 60 }}>
               <Board
                 programId={programId}
                 kind="dinner"
@@ -192,7 +193,11 @@ export default async function DinnerPage({
               "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
             gap: "clamp(20px, 4vw, 40px)",
             alignItems: "center",
-            padding: "clamp(32px, 7vw, 64px) 0",
+            // Vertical only — let .ds-wrap supply the horizontal edge padding
+            // (a `padding` shorthand here would reset it to 0 and the content
+            // would hug the screen edges).
+            paddingTop: "clamp(32px, 7vw, 64px)",
+            paddingBottom: "clamp(32px, 7vw, 64px)",
           }}
         >
           <Reveal>
@@ -330,7 +335,8 @@ export default async function DinnerPage({
           style={{
             maxWidth: 640,
             margin: "0 auto",
-            padding: "10px 0",
+            paddingTop: 10,
+            paddingBottom: 10,
             textAlign: "center",
             color: "var(--ds-ink)",
             whiteSpace: "pre-line",
@@ -340,7 +346,10 @@ export default async function DinnerPage({
         </p>
       )}
 
-      <p className="ds-wrap" style={{ textAlign: "center", padding: "4px 0" }}>
+      <p
+        className="ds-wrap"
+        style={{ textAlign: "center", paddingTop: 4, paddingBottom: 4 }}
+      >
         <Link
           href={permalink}
           style={{
@@ -355,7 +364,10 @@ export default async function DinnerPage({
       </p>
 
       {/* how it works */}
-      <section className="ds-wrap" style={{ padding: "20px 0 40px" }}>
+      <section
+        className="ds-wrap"
+        style={{ paddingTop: 20, paddingBottom: 40 }}
+      >
         <div
           style={{
             display: "grid",
@@ -397,14 +409,14 @@ export default async function DinnerPage({
 
       {programId && (
         <>
-          <section className="ds-wrap" style={{ padding: "0 0 50px" }}>
+          <section className="ds-wrap" style={{ paddingBottom: 50 }}>
             <AlbumSection
               programId={programId}
               kind="dinner"
               albums={albumSection}
             />
           </section>
-          <section className="ds-wrap" style={{ padding: "0 0 60px" }}>
+          <section className="ds-wrap" style={{ paddingBottom: 60 }}>
             <Board
               programId={programId}
               kind="dinner"
