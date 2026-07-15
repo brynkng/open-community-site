@@ -184,7 +184,7 @@ export default async function DinnerPage({
       >
         <DinnerBackground />
         <div
-          className="ds-wrap"
+          className="ds-wrap ds-dinner-hero-grid"
           style={{
             position: "relative",
             zIndex: 1,
@@ -193,11 +193,10 @@ export default async function DinnerPage({
               "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
             gap: "clamp(20px, 4vw, 40px)",
             alignItems: "center",
-            // Vertical only — let .ds-wrap supply the horizontal edge padding
-            // (a `padding` shorthand here would reset it to 0 and the content
-            // would hug the screen edges).
-            paddingTop: "clamp(32px, 7vw, 64px)",
-            paddingBottom: "clamp(32px, 7vw, 64px)",
+            // Vertical padding (which pushes the mobile copy below the logo
+            // badge) lives in .ds-dinner-hero-grid so it can differ per
+            // breakpoint; horizontal edge padding comes from .ds-wrap. Setting a
+            // `padding` shorthand here would reset both to 0.
           }}
         >
           <Reveal>

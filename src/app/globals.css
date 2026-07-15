@@ -429,6 +429,23 @@ body {
   }
 }
 
+/* Dinner-page hero copy placement. On mobile the DinnerBackground shows the
+   full portrait poster (24/43) pinned to the top, so push the copy down to
+   start below the circular logo badge — over the dinner scene. The badge bottom
+   sits at ~54% of the poster height, and poster height = (43/24)·100vw, so
+   ~95vw clears it and, being width-relative, tracks the badge across all phone
+   widths. Desktop keeps compact vertical padding (copy over the landscape clip). */
+.ds-dinner-hero-grid {
+  padding-top: 95vw;
+  padding-bottom: clamp(28px, 6vw, 56px);
+}
+@media (min-width: 640px) {
+  .ds-dinner-hero-grid {
+    padding-top: clamp(32px, 7vw, 64px);
+    padding-bottom: clamp(32px, 7vw, 64px);
+  }
+}
+
 .ds-drift {
   position: absolute;
   border-radius: 14px;
