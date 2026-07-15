@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { dinners, rides, rsvps, subscribers, igPosts, trips, tripInterest } from "@/db/schema";
+import {
+  dinners,
+  rides,
+  rsvps,
+  subscribers,
+  igPosts,
+  trips,
+  tripInterest,
+} from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { formatDate } from "@/lib/utils";
 import {
@@ -12,12 +20,14 @@ import {
 
 export const dynamic = "force-dynamic";
 
-async function headcountFor(kind: "dinner" | "ride", refId: number): Promise<number> {
-  const rows = await getDb()
-    .select()
-    .from(rsvps)
-    .where(eq(rsvps.refId, refId));
-  return rows.filter((r) => r.kind === kind).reduce((s, r) => s + r.partySize, 0);
+async function headcountFor(
+  kind: "dinner" | "ride",
+  refId: number,
+): Promise<number> {
+  const rows = await getDb().select().from(rsvps).where(eq(rsvps.refId, refId));
+  return rows
+    .filter((r) => r.kind === kind)
+    .reduce((s, r) => s + r.partySize, 0);
 }
 
 export default async function AdminDashboard() {
@@ -32,11 +42,18 @@ export default async function AdminDashboard() {
     db.select().from(igPosts).orderBy(desc(igPosts.createdAt)).limit(5),
   ]);
 
-  const dinnerCounts = await Promise.all(dinnerList.map((d) => headcountFor("dinner", d.id)));
-  const rideCounts = await Promise.all(rideList.map((r) => headcountFor("ride", r.id)));
+  const dinnerCounts = await Promise.all(
+    dinnerList.map((d) => headcountFor("dinner", d.id)),
+  );
+  const rideCounts = await Promise.all(
+    rideList.map((r) => headcountFor("ride", r.id)),
+  );
   const tripCounts = await Promise.all(
     tripList.map(async (t) => {
-      const rows = await db.select().from(tripInterest).where(eq(tripInterest.tripId, t.id));
+      const rows = await db
+        .select()
+        .from(tripInterest)
+        .where(eq(tripInterest.tripId, t.id));
       return rows.reduce((s, r) => s + r.partySize, 0);
     }),
   );
@@ -66,11 +83,24 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Link href="/admin/dinners/new" className="btn-primary">+ New dinner</Link>
-        <Link href="/admin/rides/new" className="btn-primary">+ New ride</Link>
-        <Link href="/admin/trips/new" className="btn-primary">+ New trip</Link>
-        <Link href="/admin/programs" className="btn-secondary">Manage programs</Link>
-        <Link href="/admin/newsletter" className="btn-secondary">Send newsletter</Link>
+        <Link href="/admin/dinners/new" className="btn-primary">
+          + New dinner
+        </Link>
+        <Link href="/admin/rides/new" className="btn-primary">
+          + New ride
+        </Link>
+        <Link href="/admin/trips/new" className="btn-primary">
+          + New trip
+        </Link>
+        <Link href="/admin/programs" className="btn-secondary">
+          Manage programs
+        </Link>
+        <Link href="/admin/newsletter" className="btn-secondary">
+          Send newsletter
+        </Link>
+        <Link href="/admin/moderation" className="btn-secondary">
+          Moderation
+        </Link>
       </div>
 
       {/* Dinners */}
@@ -78,15 +108,24 @@ export default async function AdminDashboard() {
         <h2 className="mb-3 text-lg font-bold">Saturday dinners</h2>
         <div className="space-y-2">
           {dinnerList.map((d, i) => (
-            <div key={d.id} className="card flex items-center justify-between py-3">
+            <div
+              key={d.id}
+              className="card flex items-center justify-between py-3"
+            >
               <div>
                 <p className="font-semibold">{d.title}</p>
-                <p className="text-sm text-stone-600">{formatDate(d.date)} · {d.status}</p>
+                <p className="text-sm text-stone-600">
+                  {formatDate(d.date)} · {d.status}
+                </p>
               </div>
-              <p className="text-sm font-medium text-brand-dark">{dinnerCounts[i]} coming</p>
+              <p className="text-sm font-medium text-brand-dark">
+                {dinnerCounts[i]} coming
+              </p>
             </div>
           ))}
-          {dinnerList.length === 0 && <p className="text-sm text-stone-500">No dinners yet.</p>}
+          {dinnerList.length === 0 && (
+            <p className="text-sm text-stone-500">No dinners yet.</p>
+          )}
         </div>
       </section>
 
@@ -95,7 +134,10 @@ export default async function AdminDashboard() {
         <h2 className="mb-3 text-lg font-bold">Sunday rides</h2>
         <div className="space-y-2">
           {rideList.map((r, i) => (
-            <div key={r.id} className="card flex flex-wrap items-center justify-between gap-3 py-3">
+            <div
+              key={r.id}
+              className="card flex flex-wrap items-center justify-between gap-3 py-3"
+            >
               <div>
                 <p className="font-semibold">{r.title}</p>
                 <p className="text-sm text-stone-600">
@@ -106,7 +148,11 @@ export default async function AdminDashboard() {
               <div className="flex flex-wrap gap-2">
                 <form action={publishRideToIgAction}>
                   <input type="hidden" name="id" value={r.id} />
-                  <button className="btn-secondary" disabled={!r.imageKey} title={r.imageKey ? "" : "Add a cover image first"}>
+                  <button
+                    className="btn-secondary"
+                    disabled={!r.imageKey}
+                    title={r.imageKey ? "" : "Add a cover image first"}
+                  >
                     Post to Instagram
                   </button>
                 </form>
@@ -126,7 +172,9 @@ export default async function AdminDashboard() {
               </div>
             </div>
           ))}
-          {rideList.length === 0 && <p className="text-sm text-stone-500">No rides yet.</p>}
+          {rideList.length === 0 && (
+            <p className="text-sm text-stone-500">No rides yet.</p>
+          )}
         </div>
       </section>
 
@@ -143,14 +191,21 @@ export default async function AdminDashboard() {
               <div>
                 <p className="font-semibold">{t.title}</p>
                 <p className="text-sm text-stone-600">
-                  {t.finalDate ? `confirmed ${formatDate(t.finalDate)}` : t.tentativeWindow || "date TBD"} · {t.status}
+                  {t.finalDate
+                    ? `confirmed ${formatDate(t.finalDate)}`
+                    : t.tentativeWindow || "date TBD"}{" "}
+                  · {t.status}
                   {t.pollOpen && !t.finalDate ? " · poll open" : ""}
                 </p>
               </div>
-              <p className="text-sm font-medium text-brand-dark">{tripCounts[i]} interested</p>
+              <p className="text-sm font-medium text-brand-dark">
+                {tripCounts[i]} interested
+              </p>
             </Link>
           ))}
-          {tripList.length === 0 && <p className="text-sm text-stone-500">No trips yet.</p>}
+          {tripList.length === 0 && (
+            <p className="text-sm text-stone-500">No trips yet.</p>
+          )}
         </div>
       </section>
 
@@ -174,7 +229,9 @@ export default async function AdminDashboard() {
                 </span>
                 {" — "}
                 {p.caption.slice(0, 60)}
-                {p.error ? <span className="block text-xs text-red-600">{p.error}</span> : null}
+                {p.error ? (
+                  <span className="block text-xs text-red-600">{p.error}</span>
+                ) : null}
               </div>
             ))}
           </div>
