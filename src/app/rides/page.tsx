@@ -14,6 +14,7 @@ import { pageMetadata, ogImageForProgram } from "@/lib/seo";
 import { AlbumSection } from "@/components/AlbumSection";
 import { Board } from "@/components/Board";
 import { InfoTip } from "@/components/InfoTip";
+import { InstagramLink } from "@/components/InstagramLink";
 
 export const dynamic = "force-dynamic";
 
@@ -203,6 +204,12 @@ export default async function RidesPage({
               >
                 🛤 Mostly trail
               </span>
+            </div>
+            <div style={{ margin: "16px 0 0" }}>
+              <InstagramLink
+                handle={brand.instagram}
+                accent={`var(--brand-accent, ${brand.accent})`}
+              />
             </div>
           </Reveal>
 

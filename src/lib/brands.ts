@@ -21,6 +21,8 @@ export interface BrandTokens {
   accent: string;
   /** Emoji shown in place of a logo image when the program/brand has none. */
   emojiFallback: string | null;
+  /** Instagram handle (no leading @), or null if the brand has no IG presence. */
+  instagram: string | null;
 }
 
 const BRAND_BY_KIND: Record<Program["kind"], BrandTokens> = {
@@ -31,6 +33,7 @@ const BRAND_BY_KIND: Record<Program["kind"], BrandTokens> = {
     displayFontVar: "var(--font-ss)",
     accent: "#A8332A",
     emojiFallback: null,
+    instagram: "sidewalk_story_philly",
   },
   ride: {
     brandKey: "nb",
@@ -39,6 +42,7 @@ const BRAND_BY_KIND: Record<Program["kind"], BrandTokens> = {
     displayFontVar: "var(--font-nb)",
     accent: "#1F3A63",
     emojiFallback: null,
+    instagram: "nomadic_bike_philly",
   },
   trip: {
     brandKey: "ft",
@@ -47,6 +51,7 @@ const BRAND_BY_KIND: Record<Program["kind"], BrandTokens> = {
     displayFontVar: "var(--font-ft)",
     accent: "#2E5339",
     emojiFallback: "⛺",
+    instagram: null,
   },
 };
 

@@ -15,6 +15,7 @@ import { DinnerBackground } from "@/components/DinnerBackground";
 import { Reveal } from "@/components/Reveal";
 import { AlbumSection } from "@/components/AlbumSection";
 import { Board } from "@/components/Board";
+import { InstagramLink } from "@/components/InstagramLink";
 import Image from "next/image";
 import Link from "next/link";
 import { dinnerSlug } from "@/lib/dinner-permalink";
@@ -116,6 +117,12 @@ export default async function DinnerPage({
           >
             Saturday Dinners
           </h1>
+          <div style={{ margin: "16px 0 0" }}>
+            <InstagramLink
+              handle={brand.instagram}
+              accent={`var(--brand-accent-deep, ${brand.accent})`}
+            />
+          </div>
         </Reveal>
         <div className="ds-wrap" style={{ paddingBottom: 60 }}>
           <Reveal
@@ -249,6 +256,12 @@ export default async function DinnerPage({
               >
                 💸 Always free
               </span>
+            </div>
+            <div style={{ margin: "16px 0 0" }}>
+              <InstagramLink
+                handle={brand.instagram}
+                accent={`var(--brand-accent, ${brand.accent})`}
+              />
             </div>
           </Reveal>
 
