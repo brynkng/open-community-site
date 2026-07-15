@@ -35,10 +35,13 @@ export function DinnerBackground() {
 
   return (
     <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden bg-ink">
-      {reduceMotion || !src ? (
+      {/* Until the viewport is resolved (src === null) we render only the dark
+          background — never a poster — so desktop never flashes the mobile
+          still before the video loads. */}
+      {reduceMotion ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={poster} alt="" className="h-full w-full object-cover" />
-      ) : (
+      ) : !src ? null : (
         <video
           key={src}
           className="h-full w-full object-cover"
