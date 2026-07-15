@@ -61,104 +61,108 @@ export function DinnerPanel({
       data-brand={brand.brandKey}
       className="ds-land-panel block"
       style={{
-        background:
-          "linear-gradient(180deg, var(--brand-bg) 0%, var(--brand-accent-deep) 20%, var(--brand-accent-deep) 68%, #1F3A63 100%)",
+        background: "#000",
         padding: 0,
         justifyContent: "flex-end",
       }}
     >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {reduceMotion || !src ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={poster}
-            alt=""
-            className="ds-dinner-video h-full w-full object-cover"
-          />
-        ) : (
-          <video
-            key={src}
-            className="ds-dinner-video h-full w-full object-cover"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            poster={poster}
-            src={src}
-          />
-        )}
-      </div>
+      {/* Cap the video background at 1300px, centered, with black pillar bars
+          on the sides of wider viewports (the panel's black background). */}
+      <div className="relative mx-auto flex w-full max-w-[1300px] flex-1 flex-col justify-end overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {reduceMotion || !src ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={poster}
+              alt=""
+              className="ds-dinner-video h-full w-full object-cover"
+            />
+          ) : (
+            <video
+              key={src}
+              className="ds-dinner-video h-full w-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              poster={poster}
+              src={src}
+            />
+          )}
+        </div>
 
-      {/* scrim so the copy reads over the video — left-anchored on desktop,
+        {/* scrim so the copy reads over the video — left-anchored on desktop,
           bottom-weighted on mobile (see .ds-dinner-scrim in globals.css) */}
-      <div aria-hidden className="ds-dinner-scrim absolute inset-0" />
+        <div aria-hidden className="ds-dinner-scrim absolute inset-0" />
 
-      <Reveal
-        style={{
-          position: "relative",
-          width: "100%",
-          padding: "clamp(26px, 4vw, 46px)",
-        }}
-      >
-        <div
-          className="ds-dinner-copy"
+        <Reveal
           style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            gap: 12,
+            position: "relative",
+            width: "100%",
+            padding: "clamp(26px, 4vw, 46px)",
           }}
         >
-          <span
+          <div
+            className="ds-dinner-copy"
             style={{
-              fontSize: 12.5,
-              color: "#fff",
-              opacity: 0.95,
-              letterSpacing: ".09em",
-              textTransform: "uppercase",
-              textShadow: "0 2px 12px #000, 0 0 8px #000, 0 0 3px #000",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              textAlign: "center",
+              gap: 12,
             }}
           >
-            {brand.name} · {when}
-          </span>
-          <h2
-            style={{
-              fontFamily: brand.displayFontVar,
-              fontSize: "clamp(20px, 2.7vw, 34px)",
-              color: "#fff",
-              margin: 0,
-              lineHeight: 1.3,
-              textShadow:
-                "0 2px 20px #000, 0 2px 8px #000, 0 0 6px #000, 0 0 2px #000",
-            }}
-          >
-            {headline}
-          </h2>
-          <p
-            style={{
-              fontSize: "clamp(14px, 1.5vw, 17px)",
-              margin: 0,
-              color: "#fff",
-              lineHeight: 1.55,
-              textShadow:
-                "0 2px 16px #000, 0 1px 6px #000, 0 0 5px #000, 0 0 2px #000",
-            }}
-          >
-            {sub}
-          </p>
-          <span
-            className="ds-btn"
-            style={{
-              background: "rgba(255,255,255,.96)",
-              color: "var(--brand-accent-deep)",
-              marginTop: 4,
-            }}
-          >
-            {cta} →
-          </span>
-        </div>
-      </Reveal>
+            <span
+              style={{
+                fontSize: 12.5,
+                color: "#fff",
+                opacity: 0.95,
+                letterSpacing: ".09em",
+                textTransform: "uppercase",
+                textShadow: "0 2px 12px #000, 0 0 8px #000, 0 0 3px #000",
+              }}
+            >
+              {brand.name} · {when}
+            </span>
+            <h2
+              style={{
+                fontFamily: brand.displayFontVar,
+                fontSize: "clamp(20px, 2.7vw, 34px)",
+                color: "#fff",
+                margin: 0,
+                lineHeight: 1.3,
+                textShadow:
+                  "0 2px 20px #000, 0 2px 8px #000, 0 0 6px #000, 0 0 2px #000",
+              }}
+            >
+              {headline}
+            </h2>
+            <p
+              style={{
+                fontSize: "clamp(14px, 1.5vw, 17px)",
+                margin: 0,
+                color: "#fff",
+                lineHeight: 1.55,
+                textShadow:
+                  "0 2px 16px #000, 0 1px 6px #000, 0 0 5px #000, 0 0 2px #000",
+              }}
+            >
+              {sub}
+            </p>
+            <span
+              className="ds-btn"
+              style={{
+                background: "rgba(255,255,255,.96)",
+                color: "var(--brand-accent-deep)",
+                marginTop: 4,
+              }}
+            >
+              {cta} →
+            </span>
+          </div>
+        </Reveal>
+      </div>
     </Link>
   );
 }

@@ -336,15 +336,15 @@ body {
 }
 .ds-dinner-scrim {
   background: linear-gradient(
-    90deg,
-    rgba(8, 4, 2, 0.92) 0%,
-    rgba(8, 4, 2, 0.6) 30%,
-    rgba(8, 4, 2, 0.15) 46%,
-    transparent 58%
+    180deg,
+    rgba(8, 4, 2, 0.12) 0%,
+    rgba(8, 4, 2, 0.32) 42%,
+    rgba(8, 4, 2, 0.85) 100%
   );
 }
 .ds-dinner-copy {
-  max-width: min(440px, 44%);
+  max-width: min(560px, 92%);
+  margin: 0 auto;
 }
 @media (max-width: 639px) {
   .ds-dinner-video {
