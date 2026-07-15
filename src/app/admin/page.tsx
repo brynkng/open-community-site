@@ -214,6 +214,9 @@ export default async function AdminDashboard() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
+                <Link href={`/admin/rides/${r.id}`} className="btn-secondary">
+                  Edit
+                </Link>
                 <form action={publishRideToIgAction}>
                   <input type="hidden" name="id" value={r.id} />
                   <button

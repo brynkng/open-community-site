@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { updateDinnerAction, type AdminState } from "@/app/admin/actions";
+import { MakeRecurringFields } from "./MakeRecurringFields";
 import type { Dinner } from "@/db/schema";
 
 export function DinnerEditForm({ dinner }: { dinner: Dinner }) {
@@ -89,6 +90,16 @@ export function DinnerEditForm({ dinner }: { dinner: Dinner }) {
           defaultValue={dinner.description ?? ""}
         />
       </div>
+      {dinner.seriesId == null ? (
+        <MakeRecurringFields
+          defaultWeekday={new Date(dinner.date + "T00:00:00Z").getUTCDay()}
+        />
+      ) : (
+        <p className="rounded-lg border border-stone-200 p-3 text-sm text-stone-600">
+          Part of a weekly series — pause or delete the series from the
+          dashboard.
+        </p>
+      )}
       {state && (
         <p
           className={

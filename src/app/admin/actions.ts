@@ -141,21 +141,58 @@ export async function updateDinnerAction(
   const date = String(formData.get("date") || "");
   if (!date) return { ok: false, message: "Pick a date." };
 
-  await getDb()
+  const db = getDb();
+  const [existing] = await db
+    .select()
+    .from(dinners)
+    .where(eq(dinners.id, id))
+    .limit(1);
+  if (!existing) return { ok: false, message: "Dinner not found." };
+
+  const title =
+    String(formData.get("title") || "").trim() || "Saturday Community Dinner";
+  const description = String(formData.get("description") || "") || null;
+  const location = String(formData.get("location") || "") || null;
+  const startTime = String(formData.get("startTime") || "") || null;
+  const capacity = formData.get("capacity")
+    ? Number(formData.get("capacity"))
+    : null;
+
+  await db
     .update(dinners)
-    .set({
-      title:
-        String(formData.get("title") || "").trim() ||
-        "Saturday Community Dinner",
-      date,
-      description: String(formData.get("description") || "") || null,
-      location: String(formData.get("location") || "") || null,
-      startTime: String(formData.get("startTime") || "") || null,
-      capacity: formData.get("capacity")
-        ? Number(formData.get("capacity"))
-        : null,
-    })
+    .set({ title, date, description, location, startTime, capacity })
     .where(eq(dinners.id, id));
+
+  // Optionally convert a one-off into a weekly series (create the series from
+  // these details, attach this date to it, and materialize upcoming dates).
+  const weekday = parseWeekly(formData);
+  if (weekday !== null && existing.seriesId == null) {
+    const [series] = await db
+      .insert(eventSeries)
+      .values({
+        programId: existing.programId,
+        kind: "dinner",
+        weekday,
+        title,
+        description,
+        location,
+        startTime,
+        capacity,
+      })
+      .returning();
+    await db
+      .update(dinners)
+      .set({ seriesId: series.id })
+      .where(eq(dinners.id, id));
+    const created = await materializeOne(db, series, todayISO());
+    revalidatePath("/admin");
+    revalidatePath("/dinner");
+    return {
+      ok: true,
+      message: `Dinner updated and set to repeat weekly — ${created} upcoming date(s) added.`,
+    };
+  }
+
   revalidatePath("/admin");
   revalidatePath("/dinner");
   return { ok: true, message: "Dinner updated." };
@@ -251,6 +288,100 @@ export async function createRideAction(
   revalidatePath("/admin");
   revalidatePath("/rides");
   return { ok: true, message: "Ride posted." };
+}
+
+/**
+ * Update an existing (one-off or materialized) ride's core details, optionally
+ * replacing the cover image. Does not touch recurrence.
+ */
+export async function updateRideAction(
+  _prev: AdminState,
+  formData: FormData,
+): Promise<AdminState> {
+  await requireAdmin();
+  const id = Number(formData.get("id"));
+  if (!id) return { ok: false, message: "Missing ride." };
+  const title = String(formData.get("title") || "").trim();
+  if (!title) return { ok: false, message: "Title is required." };
+  const date = String(formData.get("date") || "");
+  if (!date) return { ok: false, message: "Pick a date." };
+
+  const db = getDb();
+  const [ride] = await db.select().from(rides).where(eq(rides.id, id)).limit(1);
+  if (!ride) return { ok: false, message: "Ride not found." };
+
+  // Replace the cover only when a new file is provided; key by slug so the
+  // public URL is stable.
+  let imageKey = ride.imageKey;
+  const file = formData.get("image");
+  if (file instanceof File && file.size > 0) {
+    if (file.size > 8 * 1024 * 1024)
+      return { ok: false, message: "Image must be under 8 MB." };
+    const ext = file.type.includes("png") ? "png" : "jpg";
+    imageKey = `rides/${ride.slug}.${ext}`;
+    await env().MEDIA.put(imageKey, await file.arrayBuffer(), {
+      httpMetadata: { contentType: file.type || "image/jpeg" },
+    });
+  }
+
+  const startTime = String(formData.get("startTime") || "") || null;
+  const meetLocation = String(formData.get("meetLocation") || "") || null;
+  const distanceKm = formData.get("distanceMiles")
+    ? milesToKm(Number(formData.get("distanceMiles")))
+    : null;
+  const paceLevel = (String(formData.get("paceLevel") || "") || null) as never;
+  const routeUrl = String(formData.get("routeUrl") || "") || null;
+  const description = String(formData.get("description") || "") || null;
+
+  await db
+    .update(rides)
+    .set({
+      title,
+      date,
+      startTime,
+      meetLocation,
+      distanceKm,
+      paceLevel,
+      routeUrl,
+      description,
+      imageKey,
+    })
+    .where(eq(rides.id, id));
+
+  // Optionally convert a one-off into a weekly series.
+  const weekday = parseWeekly(formData);
+  if (weekday !== null && ride.seriesId == null) {
+    const [series] = await db
+      .insert(eventSeries)
+      .values({
+        programId: ride.programId,
+        kind: "ride",
+        weekday,
+        title,
+        description,
+        location: meetLocation,
+        startTime,
+        distanceKm,
+        paceLevel,
+        routeUrl,
+        imageKey,
+      })
+      .returning();
+    await db.update(rides).set({ seriesId: series.id }).where(eq(rides.id, id));
+    const created = await materializeOne(db, series, todayISO());
+    revalidatePath("/admin");
+    revalidatePath("/rides");
+    revalidatePath(`/rides/${ride.slug}`);
+    return {
+      ok: true,
+      message: `Ride updated and set to repeat weekly — ${created} upcoming date(s) added.`,
+    };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/rides");
+  revalidatePath(`/rides/${ride.slug}`);
+  return { ok: true, message: "Ride updated." };
 }
 
 /** Pause or resume a recurring series (paused series stop materializing). */
