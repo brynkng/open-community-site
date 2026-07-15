@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { and, eq, gte } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   dinners,
   rides,
+  eventSeries,
+  rsvps,
   igPosts,
   subscribers,
   programs,
@@ -24,7 +26,14 @@ import {
 import { checkPassword, requireAdmin } from "@/lib/auth";
 import { createSession, destroySession } from "@/lib/session";
 import { defaultProgramIdForKind, getProgramById } from "@/lib/programs";
-import { slugify, randomToken, formatDate } from "@/lib/utils";
+import { materializeOne, todayISO } from "@/lib/series";
+import {
+  slugify,
+  randomToken,
+  formatDate,
+  formatTime,
+  milesToKm,
+} from "@/lib/utils";
 import { publishImage } from "@/lib/instagram";
 import { env } from "@/lib/env";
 import { sendNewsletter, sendEmail, baseTemplate } from "@/lib/email";
@@ -47,83 +56,237 @@ export async function logoutAction(): Promise<void> {
   redirect("/admin/login");
 }
 
-/** Create a Saturday dinner instance. */
+/** Parse the "Repeats weekly" toggle + weekday from an event form. */
+function parseWeekly(formData: FormData): number | null {
+  if (formData.get("recurring") !== "on") return null;
+  const weekday = Number(formData.get("weekday"));
+  return Number.isInteger(weekday) && weekday >= 0 && weekday <= 6
+    ? weekday
+    : null;
+}
+
+/**
+ * Create a Saturday dinner. If "Repeats weekly" is on, this creates a recurring
+ * series (and immediately materializes its upcoming instances); otherwise it
+ * creates a single one-off dinner on the chosen date.
+ */
 export async function createDinnerAction(
   _prev: AdminState,
   formData: FormData,
 ): Promise<AdminState> {
   await requireAdmin();
-  const date = String(formData.get("date") || "");
-  if (!date) return { ok: false, message: "Pick a date." };
+  const db = getDb();
   const programId =
     Number(formData.get("programId")) ||
     (await defaultProgramIdForKind("dinner"));
-  await getDb()
-    .insert(dinners)
-    .values({
-      programId,
-      date,
-      title: String(formData.get("title") || "Saturday Community Dinner"),
-      description: String(formData.get("description") || "") || null,
-      location: String(formData.get("location") || "") || null,
-      startTime: String(formData.get("startTime") || "") || null,
-      capacity: formData.get("capacity")
-        ? Number(formData.get("capacity"))
-        : null,
-    });
+  const title = String(formData.get("title") || "Saturday Community Dinner");
+  const description = String(formData.get("description") || "") || null;
+  const location = String(formData.get("location") || "") || null;
+  const startTime = String(formData.get("startTime") || "") || null;
+  const capacity = formData.get("capacity")
+    ? Number(formData.get("capacity"))
+    : null;
+
+  const weekday = parseWeekly(formData);
+  if (weekday !== null) {
+    const [series] = await db
+      .insert(eventSeries)
+      .values({
+        programId,
+        kind: "dinner",
+        weekday,
+        title,
+        description,
+        location,
+        startTime,
+        capacity,
+      })
+      .returning();
+    const created = await materializeOne(db, series, todayISO());
+    revalidatePath("/admin");
+    revalidatePath("/dinner");
+    return {
+      ok: true,
+      message: `Weekly dinner series created — ${created} upcoming date(s) added.`,
+    };
+  }
+
+  const date = String(formData.get("date") || "");
+  if (!date) return { ok: false, message: "Pick a date." };
+  await db.insert(dinners).values({
+    programId,
+    date,
+    title,
+    description,
+    location,
+    startTime,
+    capacity,
+  });
   revalidatePath("/admin");
   revalidatePath("/dinner");
   return { ok: true, message: "Dinner added." };
 }
 
-/** Create a Sunday ride, optionally with a cover image uploaded to R2. */
+/**
+ * Create a Sunday ride, optionally with a cover image uploaded to R2. If
+ * "Repeats weekly" is on, this creates a recurring series (the cover image is
+ * reused on every generated ride) and materializes its upcoming instances;
+ * otherwise it posts a single one-off ride.
+ */
 export async function createRideAction(
   _prev: AdminState,
   formData: FormData,
 ): Promise<AdminState> {
   await requireAdmin();
+  const db = getDb();
   const title = String(formData.get("title") || "").trim();
-  const date = String(formData.get("date") || "");
-  if (!title || !date)
-    return { ok: false, message: "Title and date are required." };
+  if (!title) return { ok: false, message: "Title is required." };
 
-  const slug = `${slugify(title)}-${randomToken(3)}`;
   const programId =
     Number(formData.get("programId")) ||
     (await defaultProgramIdForKind("ride"));
+  const startTime = String(formData.get("startTime") || "") || null;
+  const meetLocation = String(formData.get("meetLocation") || "") || null;
+  const distanceKm = formData.get("distanceMiles")
+    ? milesToKm(Number(formData.get("distanceMiles")))
+    : null;
+  const paceLevel = (String(formData.get("paceLevel") || "") || null) as never;
+  const routeUrl = String(formData.get("routeUrl") || "") || null;
+  const description = String(formData.get("description") || "") || null;
+  const weekday = parseWeekly(formData);
 
+  // Upload the cover once. A one-off keys it by ride slug; a series keys it by
+  // a stable series token so every generated instance can share the object.
+  const keyBase =
+    weekday !== null
+      ? `series-${randomToken(4)}`
+      : `${slugify(title)}-${randomToken(3)}`;
   let imageKey: string | null = null;
   const file = formData.get("image");
   if (file instanceof File && file.size > 0) {
     if (file.size > 8 * 1024 * 1024)
       return { ok: false, message: "Image must be under 8 MB." };
     const ext = file.type.includes("png") ? "png" : "jpg";
-    imageKey = `rides/${slug}.${ext}`;
+    imageKey = `rides/${keyBase}.${ext}`;
     await env().MEDIA.put(imageKey, await file.arrayBuffer(), {
       httpMetadata: { contentType: file.type || "image/jpeg" },
     });
   }
 
-  await getDb()
-    .insert(rides)
-    .values({
-      programId,
-      slug,
-      title,
-      date,
-      startTime: String(formData.get("startTime") || "") || null,
-      meetLocation: String(formData.get("meetLocation") || "") || null,
-      distanceKm: formData.get("distanceKm")
-        ? Number(formData.get("distanceKm"))
-        : null,
-      paceLevel: (String(formData.get("paceLevel") || "") || null) as never,
-      routeUrl: String(formData.get("routeUrl") || "") || null,
-      description: String(formData.get("description") || "") || null,
-      imageKey,
-    });
+  if (weekday !== null) {
+    const [series] = await db
+      .insert(eventSeries)
+      .values({
+        programId,
+        kind: "ride",
+        weekday,
+        title,
+        description,
+        location: meetLocation,
+        startTime,
+        distanceKm,
+        paceLevel,
+        routeUrl,
+        imageKey,
+      })
+      .returning();
+    const created = await materializeOne(db, series, todayISO());
+    revalidatePath("/admin");
+    revalidatePath("/rides");
+    return {
+      ok: true,
+      message: `Weekly ride series created — ${created} upcoming date(s) added.`,
+    };
+  }
+
+  const date = String(formData.get("date") || "");
+  if (!date) return { ok: false, message: "Title and date are required." };
+  await db.insert(rides).values({
+    programId,
+    slug: `${slugify(title)}-${randomToken(3)}`,
+    title,
+    date,
+    startTime,
+    meetLocation,
+    distanceKm,
+    paceLevel,
+    routeUrl,
+    description,
+    imageKey,
+  });
   revalidatePath("/admin");
   revalidatePath("/rides");
   return { ok: true, message: "Ride posted." };
+}
+
+/** Pause or resume a recurring series (paused series stop materializing). */
+export async function setSeriesActiveAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = Number(formData.get("id"));
+  const active = formData.get("active") === "true";
+  if (!id) return;
+  const db = getDb();
+  await db.update(eventSeries).set({ active }).where(eq(eventSeries.id, id));
+  // Resuming should backfill any dates that were missed while paused.
+  if (active) {
+    const [series] = await db
+      .select()
+      .from(eventSeries)
+      .where(eq(eventSeries.id, id))
+      .limit(1);
+    if (series) await materializeOne(db, series, todayISO());
+  }
+  revalidatePath("/admin");
+  revalidatePath("/dinner");
+  revalidatePath("/rides");
+}
+
+/**
+ * Delete a recurring series. Upcoming generated instances (date >= today) with
+ * no RSVPs are removed too; any with RSVPs are detached (kept as one-offs) so we
+ * never orphan attendees. Past instances always stay for history.
+ */
+export async function deleteSeriesAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  const db = getDb();
+  const [series] = await db
+    .select()
+    .from(eventSeries)
+    .where(eq(eventSeries.id, id))
+    .limit(1);
+  if (!series) return;
+
+  const table = series.kind === "dinner" ? dinners : rides;
+  const upcoming = await db
+    .select()
+    .from(table)
+    .where(and(eq(table.seriesId, id), gte(table.date, todayISO())));
+
+  for (const inst of upcoming) {
+    const attendees = await db
+      .select({ id: rsvps.id })
+      .from(rsvps)
+      .where(and(eq(rsvps.kind, series.kind), eq(rsvps.refId, inst.id)))
+      .limit(1);
+    if (attendees.length > 0) {
+      await db
+        .update(table)
+        .set({ seriesId: null })
+        .where(eq(table.id, inst.id));
+    } else {
+      await db.delete(table).where(eq(table.id, inst.id));
+    }
+  }
+
+  // Detach past instances too so nothing dangles at the deleted series id.
+  await db.update(table).set({ seriesId: null }).where(eq(table.seriesId, id));
+  await db.delete(eventSeries).where(eq(eventSeries.id, id));
+
+  revalidatePath("/admin");
+  revalidatePath("/dinner");
+  revalidatePath("/rides");
 }
 
 export async function setRideStatusAction(formData: FormData): Promise<void> {
@@ -160,7 +323,7 @@ export async function publishRideToIgAction(formData: FormData): Promise<void> {
   const base = env().R2_PUBLIC_BASE_URL.replace(/\/$/, "");
   const imageUrl = `${base}/${ride.imageKey}`;
   const caption =
-    `${ride.title} — ${formatDate(ride.date)}${ride.startTime ? ` @ ${ride.startTime}` : ""}\n` +
+    `${ride.title} — ${formatDate(ride.date)}${ride.startTime ? ` @ ${formatTime(ride.startTime)}` : ""}\n` +
     `${ride.meetLocation ? `Meet: ${ride.meetLocation}\n` : ""}` +
     `${ride.description ? `\n${ride.description}\n` : ""}` +
     `\nRSVP on our site. #communityride #sundayride`;

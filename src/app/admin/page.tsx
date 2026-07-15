@@ -4,6 +4,7 @@ import { getDb } from "@/db";
 import {
   dinners,
   rides,
+  eventSeries,
   rsvps,
   subscribers,
   igPosts,
@@ -16,7 +17,19 @@ import {
   logoutAction,
   setRideStatusAction,
   publishRideToIgAction,
+  setSeriesActiveAction,
+  deleteSeriesAction,
 } from "./actions";
+
+const WEEKDAYS = [
+  "Sundays",
+  "Mondays",
+  "Tuesdays",
+  "Wednesdays",
+  "Thursdays",
+  "Fridays",
+  "Saturdays",
+];
 
 export const dynamic = "force-dynamic";
 
@@ -34,13 +47,15 @@ export default async function AdminDashboard() {
   await requireAdmin();
   const db = getDb();
 
-  const [dinnerList, rideList, tripList, subs, recentIg] = await Promise.all([
-    db.select().from(dinners).orderBy(desc(dinners.date)).limit(10),
-    db.select().from(rides).orderBy(desc(rides.date)).limit(20),
-    db.select().from(trips).orderBy(desc(trips.createdAt)).limit(20),
-    db.select().from(subscribers),
-    db.select().from(igPosts).orderBy(desc(igPosts.createdAt)).limit(5),
-  ]);
+  const [dinnerList, rideList, tripList, seriesList, subs, recentIg] =
+    await Promise.all([
+      db.select().from(dinners).orderBy(desc(dinners.date)).limit(10),
+      db.select().from(rides).orderBy(desc(rides.date)).limit(20),
+      db.select().from(trips).orderBy(desc(trips.createdAt)).limit(20),
+      db.select().from(eventSeries).orderBy(desc(eventSeries.createdAt)),
+      db.select().from(subscribers),
+      db.select().from(igPosts).orderBy(desc(igPosts.createdAt)).limit(5),
+    ]);
 
   const dinnerCounts = await Promise.all(
     dinnerList.map((d) => headcountFor("dinner", d.id)),
@@ -102,6 +117,58 @@ export default async function AdminDashboard() {
           Moderation
         </Link>
       </div>
+
+      {/* Recurring series */}
+      {seriesList.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-lg font-bold">Recurring series</h2>
+          <div className="space-y-2">
+            {seriesList.map((s) => (
+              <div
+                key={s.id}
+                className="card flex flex-wrap items-center justify-between gap-3 py-3"
+              >
+                <div>
+                  <p className="font-semibold">
+                    {s.title}
+                    {!s.active && (
+                      <span className="ml-2 text-xs font-normal text-amber-700">
+                        paused
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-sm text-stone-600">
+                    {s.kind === "dinner" ? "Dinner" : "Ride"} · every{" "}
+                    {WEEKDAYS[s.weekday]}
+                    {s.startTime ? ` at ${s.startTime}` : ""}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <form action={setSeriesActiveAction}>
+                    <input type="hidden" name="id" value={s.id} />
+                    <input
+                      type="hidden"
+                      name="active"
+                      value={s.active ? "false" : "true"}
+                    />
+                    <button className="btn-secondary">
+                      {s.active ? "Pause" : "Resume"}
+                    </button>
+                  </form>
+                  <form action={deleteSeriesAction}>
+                    <input type="hidden" name="id" value={s.id} />
+                    <button className="btn-secondary">Delete series</button>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-stone-500">
+            Upcoming dates are generated automatically. Deleting a series keeps
+            any dates people have already RSVPed to.
+          </p>
+        </section>
+      )}
 
       {/* Dinners */}
       <section>

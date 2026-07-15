@@ -32,12 +32,49 @@ export const programs = sqliteTable(
 );
 
 /**
+ * A recurring weekly template. A daily cron materializes each active series into
+ * concrete `dinners`/`rides` rows for the next `horizonWeeks` weeks; those rows
+ * link back via `seriesId`. Fields not relevant to a kind stay null (e.g. a
+ * dinner series leaves `distanceKm`/`paceLevel`/`routeUrl`/`imageKey` null).
+ */
+export const eventSeries = sqliteTable(
+  "event_series",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    programId: integer("program_id"), // FK -> programs.id (convention-only)
+    kind: text("kind", { enum: ["dinner", "ride"] }).notNull(),
+    weekday: integer("weekday").notNull(), // 0=Sun … 6=Sat (JS getUTCDay)
+    startTime: text("start_time"), // e.g. "18:30"
+    title: text("title").notNull(),
+    description: text("description"),
+    location: text("location"), // dinner location / ride meeting point
+    capacity: integer("capacity"), // dinner only
+    distanceKm: integer("distance_km"), // ride only
+    paceLevel: text("pace_level", {
+      enum: ["social", "moderate", "spirited"],
+    }), // ride only
+    routeUrl: text("route_url"), // ride only
+    imageKey: text("image_key"), // ride only (R2 cover, reused per instance)
+    horizonWeeks: integer("horizon_weeks").notNull().default(8),
+    active: integer("active", { mode: "boolean" }).notNull().default(true),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
+  },
+  (t) => ({
+    activeIdx: index("event_series_active_idx").on(t.active, t.kind),
+  }),
+);
+
+/**
  * Saturday dinners — one row per dated instance (the dinner is weekly, but each
- * Saturday gets its own record so RSVPs and headcounts are per-date).
+ * Saturday gets its own record so RSVPs and headcounts are per-date). A row may
+ * be generated from an `event_series` (`seriesId` set) or a one-off (null).
  */
 export const dinners = sqliteTable("dinners", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   programId: integer("program_id"), // FK -> programs.id (kind = "dinner")
+  seriesId: integer("series_id"), // FK -> event_series.id (null = one-off)
   date: text("date").notNull(), // ISO date, e.g. 2026-07-11
   title: text("title").notNull().default("Saturday Community Dinner"),
   description: text("description"),
@@ -60,6 +97,7 @@ export const rides = sqliteTable(
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
     programId: integer("program_id"), // FK -> programs.id (kind = "ride")
+    seriesId: integer("series_id"), // FK -> event_series.id (null = one-off)
     slug: text("slug").notNull().unique(),
     title: text("title").notNull(),
     date: text("date").notNull(), // ISO date
@@ -387,6 +425,7 @@ export const rateHits = sqliteTable(
 
 // --- Types ---
 export type Program = typeof programs.$inferSelect;
+export type EventSeries = typeof eventSeries.$inferSelect;
 export type Dinner = typeof dinners.$inferSelect;
 export type Ride = typeof rides.$inferSelect;
 export type Rsvp = typeof rsvps.$inferSelect;

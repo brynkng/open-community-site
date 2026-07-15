@@ -13,12 +13,15 @@ export default {
     const jobs = [
       `${base}/api/cron/refresh-ig-token?key=${encodeURIComponent(key)}`,
       `${base}/api/cron/ride-reminders?key=${encodeURIComponent(key)}`,
+      `${base}/api/cron/generate-events?key=${encodeURIComponent(key)}`,
     ];
 
     ctx.waitUntil(
       Promise.all(
         jobs.map((url) =>
-          fetch(url, { method: "GET" }).catch((e) => console.error("cron fetch failed", url, e)),
+          fetch(url, { method: "GET" }).catch((e) =>
+            console.error("cron fetch failed", url, e),
+          ),
         ),
       ),
     );
