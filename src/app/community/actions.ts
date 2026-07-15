@@ -118,6 +118,12 @@ export async function uploadPhotoAction(
         : "jpg";
   const imageKey = `community/${programSlug}/${albumId}/${randomToken(8)}.${ext}`;
 
+  // ── R2 STORAGE SEAM ──────────────────────────────────────────────────────
+  // This is the single point where a community photo is persisted to storage.
+  // A separate workstream is adding dedicated R2 photo-storage support; swap
+  // the MEDIA.put(...) call below to route through that helper. Keep `imageKey`
+  // as the stored object key so album_photos.image_key + R2_PUBLIC_BASE_URL and
+  // the admin delete path (deleteContentAction) stay consistent.
   await env().MEDIA.put(imageKey, await file.arrayBuffer(), {
     httpMetadata: { contentType: file.type || "image/jpeg" },
   });
