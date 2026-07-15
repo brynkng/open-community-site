@@ -64,10 +64,11 @@ export function DinnerBackground() {
             />
           )}
         </div>
-        {/* Legibility overlay. Mobile: stronger and top-weighted because the
-            headline + copy sit high over a bright kitchen scene. Desktop: lighter,
-            bottom-weighted for the centered landscape clip. */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/45 to-black/75 sm:from-black/30 sm:via-black/40 sm:to-black/70" />
+        {/* Legibility scrim. Mobile: transparent over the logo badge up top so
+            it stays crisp, fading to dark only lower down behind the copy.
+            Desktop: a light, even wash over the landscape clip. (See
+            .ds-dinner-hero-scrim in globals.css.) */}
+        <div className="ds-dinner-hero-scrim absolute inset-0" />
       </div>
     </div>
   );

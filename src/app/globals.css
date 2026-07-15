@@ -446,6 +446,31 @@ body {
   }
 }
 
+/* Hero legibility scrim. Mobile: the logo badge fills the top of the poster and
+   the copy sits lower, so stay fully transparent up top (badge reads clearly)
+   and fade to dark only over the lower band behind the text. Desktop: a light,
+   even wash over the landscape clip. */
+.ds-dinner-hero-scrim {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 26%,
+    rgba(0, 0, 0, 0.4) 40%,
+    rgba(0, 0, 0, 0.72) 54%,
+    rgba(0, 0, 0, 0.72) 100%
+  );
+}
+@media (min-width: 640px) {
+  .ds-dinner-hero-scrim {
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0.4) 50%,
+      rgba(0, 0, 0, 0.7) 100%
+    );
+  }
+}
+
 .ds-drift {
   position: absolute;
   border-radius: 14px;
