@@ -10,6 +10,7 @@ import {
 } from "@/app/community/actions";
 import { brandForKind } from "@/lib/brands";
 import { Photo, type PhotoData } from "@/components/Photo";
+import { PhotoLightbox } from "@/components/PhotoLightbox";
 import { Reveal } from "@/components/Reveal";
 import { TurnstileWidget } from "@/components/TurnstileWidget";
 
@@ -55,6 +56,12 @@ export function AlbumSection({
   );
   const active =
     albums.find((a) => a.album.id === activeId) ?? albums[0] ?? null;
+
+  // Flattened photos for the active album (display order across date groups),
+  // powering the full-screen viewer opened from a thumbnail.
+  const flatPhotos = active ? active.groups.flatMap((g) => g.photos) : [];
+  const indexById = new Map(flatPhotos.map((p, i) => [p.id, i] as const));
+  const [viewer, setViewer] = useState<number | null>(null);
 
   const [naming, setNaming] = useState(false);
   const [newAlbumName, setNewAlbumName] = useState("");
@@ -260,7 +267,10 @@ export function AlbumSection({
               <button
                 key={album.id}
                 type="button"
-                onClick={() => setActiveId(album.id)}
+                onClick={() => {
+                  setActiveId(album.id);
+                  setViewer(null);
+                }}
                 className="ds-chip"
                 style={{
                   border: "none",
@@ -312,12 +322,41 @@ export function AlbumSection({
                 key={photo.id}
                 delay={Math.min(i + gi, 3) as 0 | 1 | 2 | 3}
               >
-                <Photo photo={photo} />
+                {photo.src ? (
+                  <button
+                    type="button"
+                    onClick={() => setViewer(indexById.get(photo.id) ?? 0)}
+                    aria-label={
+                      photo.cap ? `View photo: ${photo.cap}` : "View photo"
+                    }
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      padding: 0,
+                      border: "none",
+                      background: "none",
+                      cursor: "zoom-in",
+                    }}
+                  >
+                    <Photo photo={photo} />
+                  </button>
+                ) : (
+                  <Photo photo={photo} />
+                )}
               </Reveal>
             ))}
           </div>
         </div>
       ))}
+
+      {viewer !== null && flatPhotos[viewer] && (
+        <PhotoLightbox
+          photos={flatPhotos}
+          index={viewer}
+          onIndexAction={setViewer}
+          onCloseAction={() => setViewer(null)}
+        />
+      )}
     </div>
   );
 }
