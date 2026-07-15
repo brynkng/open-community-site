@@ -25,7 +25,7 @@ export const dynamic = "force-dynamic";
 type SearchParams = Promise<{ program?: string }>;
 
 const HOW_IT_WORKS: [string, string][] = [
-  ["Show up hungry", "Doors open around 5:45. First pies hit the table at 6."],
+  ["Show up hungry", "Doors open at 6 and we start making the pies."],
   ["Bring nothing", "Seriously. Not even a drink. Just come."],
   [
     "Bring anyone",
@@ -231,15 +231,6 @@ export default async function DinnerPage({
                 flexWrap: "wrap",
               }}
             >
-              <span
-                className="ds-chip"
-                style={{
-                  background: "#fff",
-                  color: "var(--brand-accent, #a8332a)",
-                }}
-              >
-                🍕 Wood-fired
-              </span>
               <span
                 className="ds-chip"
                 style={{
