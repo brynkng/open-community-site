@@ -7,8 +7,8 @@ import { Reveal } from "@/components/Reveal";
 
 const MOBILE_SRC = "/media/dinner-mobile.mp4";
 const DESKTOP_SRC = "/media/dinner-bg.mp4";
-const MOBILE_POSTER = "/media/dinner-poster-mobile.jpg";
-const DESKTOP_POSTER = "/media/dinner-poster-desktop.jpg";
+// Posters are CSS-driven (.ds-dinner-poster in globals.css) so the correct
+// still shows per-viewport from first paint — no JS/SSR mobile-on-desktop flash.
 
 /**
  * Video-forward landing panel for the dinner brand (Sidewalk Story). Ports the
@@ -38,7 +38,6 @@ export function DinnerPanel({
   cta: string;
 }) {
   const [src, setSrc] = useState<string | null>(null);
-  const [poster, setPoster] = useState(MOBILE_POSTER);
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -46,10 +45,7 @@ export function DinnerPanel({
     setReduceMotion(reduce.matches);
 
     const wide = window.matchMedia("(min-width: 640px)");
-    const pick = () => {
-      setSrc(wide.matches ? DESKTOP_SRC : MOBILE_SRC);
-      setPoster(wide.matches ? DESKTOP_POSTER : MOBILE_POSTER);
-    };
+    const pick = () => setSrc(wide.matches ? DESKTOP_SRC : MOBILE_SRC);
     pick();
     wide.addEventListener("change", pick);
     return () => wide.removeEventListener("change", pick);
@@ -70,23 +66,18 @@ export function DinnerPanel({
           on the sides of wider viewports (the panel's black background). */}
       <div className="relative mx-auto flex w-full max-w-[1300px] flex-1 flex-col justify-end overflow-hidden">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          {reduceMotion || !src ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={poster}
-              alt=""
-              className="ds-dinner-video h-full w-full object-cover"
-            />
-          ) : (
+          {/* Poster still, chosen per-viewport in CSS; visible until the video
+              paints (and permanently under reduced motion). */}
+          <div className="ds-dinner-poster ds-dinner-video absolute inset-0" />
+          {!reduceMotion && src && (
             <video
               key={src}
-              className="ds-dinner-video h-full w-full object-cover"
+              className="ds-dinner-video absolute inset-0 h-full w-full object-cover"
               autoPlay
               muted
               loop
               playsInline
               preload="auto"
-              poster={poster}
               src={src}
             />
           )}
@@ -108,8 +99,7 @@ export function DinnerPanel({
             style={{
               display: "flex",
               flexDirection: "column",
-              alignItems: "center",
-              textAlign: "center",
+              alignItems: "flex-start",
               gap: 12,
             }}
           >

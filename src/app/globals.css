@@ -334,17 +334,30 @@ body {
 .ds-dinner-video {
   transform: none;
 }
+/* CSS-driven poster still: correct per-viewport from first paint (no JS/SSR
+   flash of the portrait still on desktop). Mobile default, desktop override. */
+.ds-dinner-poster {
+  background-image: url("/media/dinner-poster-mobile.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+@media (min-width: 640px) {
+  .ds-dinner-poster {
+    background-image: url("/media/dinner-poster-desktop.jpg");
+  }
+}
 .ds-dinner-scrim {
   background: linear-gradient(
-    180deg,
-    rgba(8, 4, 2, 0.12) 0%,
-    rgba(8, 4, 2, 0.32) 42%,
-    rgba(8, 4, 2, 0.85) 100%
+    90deg,
+    rgba(8, 4, 2, 0.92) 0%,
+    rgba(8, 4, 2, 0.6) 30%,
+    rgba(8, 4, 2, 0.15) 46%,
+    transparent 58%
   );
 }
 .ds-dinner-copy {
-  max-width: min(560px, 92%);
-  margin: 0 auto;
+  max-width: min(440px, 44%);
 }
 @media (max-width: 639px) {
   .ds-dinner-video {
