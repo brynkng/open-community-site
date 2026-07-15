@@ -39,25 +39,31 @@ export function DinnerBackground() {
           viewports — matches how the landing page dinner panel contains its
           background (DinnerPanel), instead of stretching edge-to-edge. */}
       <div className="relative mx-auto h-full w-full max-w-[1300px] overflow-hidden">
-        {/* Poster still, chosen per-viewport in CSS; visible until the video
-            paints (and permanently under reduced motion). On mobile the portrait
-            media stacks a light, busy logo badge on top of the warm dinner scene
-            and the hero copy sits high, so both poster and video favor the lower
-            scene (object-bottom) to keep the badge out from under the text.
-            Desktop uses the landscape clip centered. */}
-        <div className="ds-dinner-hero-poster absolute inset-0" />
-        {!reduceMotion && src && (
-          <video
-            key={src}
-            className="absolute inset-0 h-full w-full object-cover object-bottom sm:object-center"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            src={src}
-          />
-        )}
+        {/* Media frame. The hero section is as tall as its stacked content, which
+            on mobile is far more portrait than the poster — so filling it with
+            `object-cover` scaled the poster up and cropped the badge's sides
+            (the "zoomed-in" look). Instead, on mobile the media keeps the
+            poster's own aspect (24/43) pinned to the top, so the WHOLE poster
+            shows uncropped — matching the home page's dinner panel — and the
+            dark backdrop fills below it, under the copy/RSVP. Desktop fills the
+            (max-1300, pillar-boxed) frame with the centered landscape clip. */}
+        <div className="absolute inset-x-0 top-0 aspect-[24/43] sm:inset-0 sm:aspect-auto sm:h-full">
+          {/* Poster still, chosen per-viewport in CSS; visible until the video
+              paints (and permanently under reduced motion). */}
+          <div className="ds-dinner-hero-poster absolute inset-0" />
+          {!reduceMotion && src && (
+            <video
+              key={src}
+              className="absolute inset-0 h-full w-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              src={src}
+            />
+          )}
+        </div>
         {/* Legibility overlay. Mobile: stronger and top-weighted because the
             headline + copy sit high over a bright kitchen scene. Desktop: lighter,
             bottom-weighted for the centered landscape clip. */}
