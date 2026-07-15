@@ -75,4 +75,8 @@ Admin UI: `src/app/admin/programs/page.tsx`.
 Seeded program colors/taglines (migration `0004`) are placeholders. Site title
 (`NEXT_PUBLIC_SITE_NAME`) is "Our Community" — likely should be "Sidewalk Story".
 
+The same "generate data, not new code paths" instinct powers recurring events — a weekly series is a
+template row that a cron materializes into ordinary dated instances. See
+[[recurring-event-series-materializer]].
+
 See [[data-model-and-database]] and [[coding-conventions]].

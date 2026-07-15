@@ -75,6 +75,9 @@ here). Numbered `migrations/NNNN_name.sql`.
 - **0004_programs** — creates `programs`; adds `program_id` to dinners/rides/trips; **seeds three
   programs with fixed ids 1/2/3** (nomadic-bike-philly=ride, saturday-dinner=dinner,
   community-trips=trip) and backfills existing events. Fixed ids make the backfill deterministic.
+- **0010_recurring_series** — creates `event_series` (weekly template) and adds `series_id` to
+  dinners/rides (NULL = one-off). A daily cron materializes each active series into ordinary dated
+  instance rows. See [[recurring-event-series-materializer]].
 
 ## When adding to the schema
 
