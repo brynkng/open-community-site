@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import type { Program } from "@/db/schema";
 import type { BrandTokens } from "@/lib/brands";
 import { Reveal } from "@/components/Reveal";
 
@@ -12,14 +10,18 @@ const DESKTOP_SRC = "/media/dinner-bg.mp4";
 const POSTER = "/media/dinner-poster.jpg";
 
 /**
- * Video-forward landing panel for the dinner brand (Sidewalk Story). Ports
- * the design prototype's "lower-band" `DinnerPanel` layout: video fills the
- * panel, copy sits in a frosted bar pinned to the bottom. Viewport-selects
- * portrait (mobile) vs. landscape (desktop) source, same pattern as
- * `DinnerBackground.tsx`, and shows the poster still under reduced motion.
+ * Video-forward landing panel for the dinner brand (Sidewalk Story). Ports the
+ * design prototype's "split-band" `DinnerPanel` layout: a warm-cream → brick-red
+ * → navy vertical gradient backs the panel, the looping video is nudged ~17% to
+ * the right, and a left-anchored dark scrim keeps a single left column of copy
+ * (eyebrow, headline, sub, CTA) legible over it. Viewport-selects portrait
+ * (mobile) vs. landscape (desktop) source, same pattern as `DinnerBackground.tsx`,
+ * and shows the poster still under reduced motion. The prototype's global tokens
+ * (`--ss-bg`, `--ss-red-deep`) map onto the app's `[data-brand="ss"]`-scoped
+ * `--brand-*` vars; the navy stop (`--nb-navy`) isn't in that scope, so it's the
+ * literal hex.
  */
 export function DinnerPanel({
-  program,
   brand,
   href,
   when,
@@ -27,7 +29,6 @@ export function DinnerPanel({
   sub,
   cta,
 }: {
-  program: Program;
   brand: BrandTokens;
   href: string;
   when: string;
@@ -54,16 +55,25 @@ export function DinnerPanel({
       href={href}
       data-brand={brand.brandKey}
       className="ds-land-panel block"
-      style={{ background: "#1a0f0c", padding: 0, justifyContent: "flex-end" }}
+      style={{
+        background:
+          "linear-gradient(180deg, var(--brand-bg) 0%, var(--brand-accent-deep) 20%, var(--brand-accent-deep) 68%, #1F3A63 100%)",
+        padding: 0,
+        justifyContent: "flex-end",
+      }}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {reduceMotion || !src ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={POSTER} alt="" className="h-full w-full object-cover" />
+          <img
+            src={POSTER}
+            alt=""
+            className="ds-dinner-video h-full w-full object-cover"
+          />
         ) : (
           <video
             key={src}
-            className="h-full w-full object-cover"
+            className="ds-dinner-video h-full w-full object-cover"
             autoPlay
             muted
             loop
@@ -75,90 +85,70 @@ export function DinnerPanel({
         )}
       </div>
 
+      {/* scrim so the copy reads over the video — left-anchored on desktop,
+          bottom-weighted on mobile (see .ds-dinner-scrim in globals.css) */}
+      <div aria-hidden className="ds-dinner-scrim absolute inset-0" />
+
       <Reveal
         style={{
           position: "relative",
           width: "100%",
-          padding: "clamp(22px, 4vw, 40px)",
-          background:
-            "linear-gradient(180deg, transparent, rgba(20,12,9,.5) 30%, rgba(20,12,9,.82))",
-          backdropFilter: "blur(2px)",
+          padding: "clamp(26px, 4vw, 46px)",
         }}
       >
-        <div style={{ maxWidth: 640 }}>
-          <div
+        <div
+          className="ds-dinner-copy"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            gap: 12,
+          }}
+        >
+          <span
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: 14,
+              fontSize: 12.5,
+              color: "#fff",
+              opacity: 0.95,
+              letterSpacing: ".09em",
+              textTransform: "uppercase",
+              textShadow: "0 2px 12px #000, 0 0 8px #000, 0 0 3px #000",
             }}
           >
-            {program.logoUrl && (
-              <Image
-                src={program.logoUrl}
-                alt={`${brand.name} logo`}
-                width={54}
-                height={54}
-                className="ds-float-slow"
-                style={{
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  boxShadow: "0 4px 14px rgba(0,0,0,.3)",
-                }}
-              />
-            )}
-            <div>
-              <p
-                style={{
-                  margin: 0,
-                  fontWeight: 800,
-                  fontSize: 15,
-                  letterSpacing: ".02em",
-                  color: "#fff",
-                }}
-              >
-                {brand.name}
-              </p>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 13,
-                  opacity: 0.85,
-                  letterSpacing: ".08em",
-                  textTransform: "uppercase",
-                  color: "#fff",
-                }}
-              >
-                {when}
-              </p>
-            </div>
-          </div>
+            {brand.name} · {when}
+          </span>
           <h2
             style={{
               fontFamily: brand.displayFontVar,
-              fontSize: "clamp(26px, 4vw, 46px)",
+              fontSize: "clamp(20px, 2.7vw, 34px)",
               color: "#fff",
-              textShadow: "0 2px 18px rgba(0,0,0,.35)",
               margin: 0,
+              lineHeight: 1.3,
+              textShadow:
+                "0 2px 20px #000, 0 2px 8px #000, 0 0 6px #000, 0 0 2px #000",
             }}
           >
             {headline}
           </h2>
           <p
             style={{
-              fontSize: "clamp(15px, 1.6vw, 18px)",
-              opacity: 0.95,
-              maxWidth: 520,
-              margin: "12px 0 20px",
+              fontSize: "clamp(14px, 1.5vw, 17px)",
+              margin: 0,
               color: "#fff",
+              lineHeight: 1.55,
+              textShadow:
+                "0 2px 16px #000, 0 1px 6px #000, 0 0 5px #000, 0 0 2px #000",
             }}
           >
             {sub}
           </p>
           <span
             className="ds-btn"
-            style={{ background: "rgba(255,255,255,.96)", color: brand.accent }}
+            style={{
+              background: "rgba(255,255,255,.96)",
+              color: "var(--brand-accent-deep)",
+              marginTop: 4,
+            }}
           >
             {cta} →
           </span>

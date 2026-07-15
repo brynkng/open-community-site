@@ -195,7 +195,6 @@ export default async function Home() {
               className="relative left-1/2 right-1/2 -mx-[50vw] w-screen"
             >
               <DinnerPanel
-                program={program}
                 brand={brand}
                 href={programHref(program)}
                 when={when}
