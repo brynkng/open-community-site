@@ -171,7 +171,7 @@ export default async function Home() {
         className="ds-wrap"
         style={{
           padding:
-            "clamp(40px, 8vw, 90px) clamp(16px,4vw,40px) clamp(20px, 4vw, 44px)",
+            "clamp(28px, 5vw, 56px) clamp(16px,4vw,40px) clamp(20px, 4vw, 44px)",
           textAlign: "center",
         }}
       >
