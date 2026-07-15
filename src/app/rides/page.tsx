@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { and, asc, desc, eq, gte, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
@@ -8,8 +9,11 @@ import { brandForProgram, brandForKind } from "@/lib/brands";
 import { RideCard } from "@/components/RideCard";
 import { RsvpWidget } from "@/components/RsvpWidget";
 import { Reveal } from "@/components/Reveal";
+import { pageMetadata, ogImageForProgram } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+type SearchParams = Promise<{ program?: string }>;
 
 const ROUTE_STOPS: [string, string, string][] = [
   ["South Philly", "Roll out at 10 AM sharp", "0 mi"],
@@ -18,10 +22,31 @@ const ROUTE_STOPS: [string, string, string][] = [
   ["Back home", "Same trail, easy pace", "20 mi"],
 ];
 
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}): Promise<Metadata> {
+  const { program: programSlug } = await searchParams;
+  const program = programSlug ? await getProgramBySlug(programSlug) : null;
+  const title = program ? `${program.name} — Sunday Bike Rides` : "Rides";
+  const description = program?.tagline
+    ? `${program.tagline} Group bike rides most Sundays in Philadelphia.`
+    : "Group bike rides most Sundays in Philadelphia. Pick one, check the route, and RSVP so we roll out together.";
+  // Canonical is always the clean, un-parameterized path (Q2).
+  return pageMetadata({
+    title,
+    description,
+    path: "/rides",
+    kind: "ride",
+    imagePath: ogImageForProgram(program),
+  });
+}
+
 export default async function RidesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ program?: string }>;
+  searchParams: SearchParams;
 }) {
   const { program: programSlug } = await searchParams;
   const program = programSlug ? await getProgramBySlug(programSlug) : null;

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
@@ -7,10 +8,35 @@ import { formatDate } from "@/lib/utils";
 import { getProgramById } from "@/lib/programs";
 import { TripSignup } from "@/components/TripSignup";
 import { ProgramBadge } from "@/components/ProgramBadge";
+import { JsonLd } from "@/components/JsonLd";
+import { pageMetadata, ogImageForProgram, absoluteUrl, eventJsonLd } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-export default async function TripDetail({ params }: { params: Promise<{ slug: string }> }) {
+type Params = Promise<{ slug: string }>;
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const { slug } = await params;
+  const db = getDb();
+  const [trip] = await db.select().from(trips).where(eq(trips.slug, slug)).limit(1);
+  if (!trip || trip.status === "draft") {
+    // notFound() in the page component governs the 404; return a minimal
+    // default here so generateMetadata never throws.
+    return pageMetadata({ title: "Trip", description: "Community trip.", path: `/trips/${slug}`, kind: "trip" });
+  }
+  const program = await getProgramById(trip.programId);
+  const whenPhrase = trip.finalDate ? `Confirmed: ${formatDate(trip.finalDate)}` : trip.tentativeWindow || "Date TBD";
+  const title = `${trip.title} — ${whenPhrase}`;
+  const description =
+    trip.description ||
+    `A community trip${trip.destination ? ` to ${trip.destination}` : ""}. ${whenPhrase}.`;
+  const imageUrl = trip.imageKey
+    ? `${env().R2_PUBLIC_BASE_URL.replace(/\/$/, "")}/${trip.imageKey}`
+    : absoluteUrl(ogImageForProgram(program));
+  return pageMetadata({ title, description, path: `/trips/${slug}`, imageUrl });
+}
+
+export default async function TripDetail({ params }: { params: Params }) {
   const { slug } = await params;
   const db = getDb();
   const [trip] = await db.select().from(trips).where(eq(trips.slug, slug)).limit(1);
@@ -36,8 +62,33 @@ export default async function TripDetail({ params }: { params: Promise<{ slug: s
     ? `${env().R2_PUBLIC_BASE_URL.replace(/\/$/, "")}/${trip.imageKey}`
     : null;
 
+  // Judgment call (KTD4 / U6 graceful degradation, plan §"Deferred to
+  // Implementation-Time Unknowns"): a trip with only a tentativeWindow has no
+  // firm date. schema.org's Event type does not require `startDate` for the
+  // JSON-LD itself to be syntactically/semantically valid — omitting an
+  // unset optional property is standard practice — so we still emit the
+  // Event block and simply omit `startDate` when `finalDate` is unset. The
+  // tentative window is not misrepresented as a firm date anywhere: it's
+  // folded into `description` here and it's already the only date text shown
+  // in the visible UI above (the "Confirmed: ..." / tentativeWindow line).
+  const eventDescription = trip.finalDate
+    ? trip.description || `A community trip${trip.destination ? ` to ${trip.destination}` : ""}.`
+    : `${trip.description ? `${trip.description} ` : ""}${trip.tentativeWindow ? `Tentative: ${trip.tentativeWindow}.` : "Date to be decided."}`.trim();
+
   return (
     <article className="mx-auto max-w-2xl space-y-8">
+      <JsonLd
+        data={eventJsonLd({
+          name: trip.title,
+          startDate: trip.finalDate,
+          description: eventDescription,
+          location: trip.destination,
+          status: trip.status,
+          isAccessibleForFree: true,
+          image: img ?? absoluteUrl(ogImageForProgram(program)),
+        })}
+      />
+
       {img && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={img} alt={trip.title} className="h-64 w-full rounded-2xl object-cover" />

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
 import { trips, tripInterest, tripPollOptions } from "@/db/schema";
@@ -5,13 +6,37 @@ import { getProgramBySlug } from "@/lib/programs";
 import { brandForProgram, brandForKind } from "@/lib/brands";
 import { TripCard } from "@/components/TripCard";
 import { Reveal } from "@/components/Reveal";
+import { pageMetadata, ogImageForProgram } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+type SearchParams = Promise<{ program?: string }>;
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}): Promise<Metadata> {
+  const { program: programSlug } = await searchParams;
+  const program = programSlug ? await getProgramBySlug(programSlug) : null;
+  const title = program ? `${program.name} — Community Trips` : "Trips";
+  const description = program?.tagline
+    ? `${program.tagline} Bigger one-off adventures, planned together.`
+    : "Bigger one-off adventures. Say you're interested and vote on the dates that work — we plan around the group.";
+  // Canonical is always the clean, un-parameterized path (Q2).
+  return pageMetadata({
+    title,
+    description,
+    path: "/trips",
+    kind: "trip",
+    imagePath: ogImageForProgram(program),
+  });
+}
 
 export default async function TripsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ program?: string }>;
+  searchParams: SearchParams;
 }) {
   const { program: programSlug } = await searchParams;
   const program = programSlug ? await getProgramBySlug(programSlug) : null;

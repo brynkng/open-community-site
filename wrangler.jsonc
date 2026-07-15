@@ -50,6 +50,10 @@
   "vars": {
     "NEXT_PUBLIC_SITE_NAME": "Sidewalk Story",
     "R2_PUBLIC_BASE_URL": "https://pub-b391e93c1eae471ebabc5101ce9a8e6a.r2.dev",
+    // Canonical origin for metadata/sitemap/JSON-LD (src/lib/seo.ts). Local dev
+    // may override via .dev.vars; no .dev.vars file exists today, so local dev
+    // falls back to the hardcoded constant in src/lib/seo.ts.
+    "NEXT_PUBLIC_SITE_URL": "https://sidewalkstoryphilly.com",
     // Turnstile widget site key (public, safe to expose to the client).
     // Create the widget in the Cloudflare Turnstile dashboard (or via the
     // project's `turnstile-spin` skill), then paste its site key here.

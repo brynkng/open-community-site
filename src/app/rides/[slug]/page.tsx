@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
@@ -7,10 +8,35 @@ import { formatDate } from "@/lib/utils";
 import { getProgramById } from "@/lib/programs";
 import { RsvpForm } from "@/components/RsvpForm";
 import { ProgramBadge } from "@/components/ProgramBadge";
+import { JsonLd } from "@/components/JsonLd";
+import { pageMetadata, ogImageForProgram, absoluteUrl, eventJsonLd } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-export default async function RideDetail({ params }: { params: Promise<{ slug: string }> }) {
+type Params = Promise<{ slug: string }>;
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const { slug } = await params;
+  const db = getDb();
+  const [ride] = await db.select().from(rides).where(eq(rides.slug, slug)).limit(1);
+  if (!ride || ride.status === "draft") {
+    // notFound() in the page component governs the 404; return a minimal
+    // default here so generateMetadata never throws.
+    return pageMetadata({ title: "Ride", description: "Sunday bike ride.", path: `/rides/${slug}`, kind: "ride" });
+  }
+  const program = await getProgramById(ride.programId);
+  const title = `${ride.title} — ${formatDate(ride.date)}`;
+  const description =
+    ride.description ||
+    `Sunday bike ride${ride.meetLocation ? ` from ${ride.meetLocation}` : ""} on ${formatDate(ride.date)}.`;
+  // Prefer the ride's own R2 cover image when set, else the kind fallback.
+  const imageUrl = ride.imageKey
+    ? `${env().R2_PUBLIC_BASE_URL.replace(/\/$/, "")}/${ride.imageKey}`
+    : absoluteUrl(ogImageForProgram(program));
+  return pageMetadata({ title, description, path: `/rides/${slug}`, imageUrl });
+}
+
+export default async function RideDetail({ params }: { params: Params }) {
   const { slug } = await params;
   const db = getDb();
   const [ride] = await db.select().from(rides).where(eq(rides.slug, slug)).limit(1);
@@ -30,6 +56,18 @@ export default async function RideDetail({ params }: { params: Promise<{ slug: s
 
   return (
     <article className="mx-auto max-w-2xl space-y-8">
+      <JsonLd
+        data={eventJsonLd({
+          name: ride.title,
+          startDate: ride.startTime ? `${ride.date}T${ride.startTime}` : ride.date,
+          description: ride.description,
+          location: ride.meetLocation,
+          status: ride.status,
+          isAccessibleForFree: true,
+          image: img ?? absoluteUrl(ogImageForProgram(program)),
+        })}
+      />
+
       {img && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={img} alt={ride.title} className="h-64 w-full rounded-2xl object-cover" />

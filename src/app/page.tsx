@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { and, asc, desc, eq, gte } from "drizzle-orm";
 import { getDb } from "@/db";
 import { dinners, rides, trips, type Program } from "@/db/schema";
@@ -7,8 +8,26 @@ import { brandForProgram, type BrandKey } from "@/lib/brands";
 import { LandingPanel } from "@/components/LandingPanel";
 import { DinnerPanel } from "@/components/DinnerPanel";
 import type { PhotoData } from "@/components/Photo";
+import { JsonLd } from "@/components/JsonLd";
+import { pageMetadata, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+const HOME_TITLE =
+  "Sidewalk Story — Saturday dinners, Sunday rides & community trips in Philadelphia";
+const HOME_DESCRIPTION =
+  "A Philadelphia community hosting free Saturday dinners, Sunday bike rides with Nomadic Bike Philly, and community trips. Pick what's yours and RSVP.";
+
+export function generateMetadata(): Metadata {
+  // Bypass the layout's title template — the home title should read as the
+  // full org phrase, not "<leaf> · Sidewalk Story".
+  const meta = pageMetadata({
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    path: "/",
+  });
+  return { ...meta, title: { absolute: HOME_TITLE } };
+}
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -146,6 +165,8 @@ export default async function Home() {
 
   return (
     <div>
+      <JsonLd data={organizationJsonLd()} />
+      <JsonLd data={websiteJsonLd()} />
       <header
         className="ds-wrap"
         style={{

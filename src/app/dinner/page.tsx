@@ -1,15 +1,21 @@
+import type { Metadata } from "next";
 import { and, desc, eq, gte } from "drizzle-orm";
 import { getDb } from "@/db";
 import { dinners, rsvps } from "@/db/schema";
-import { getProgramBySlug } from "@/lib/programs";
+import { getProgramBySlug, getProgramById } from "@/lib/programs";
 import { formatDate } from "@/lib/utils";
 import { brandForProgram, brandForKind } from "@/lib/brands";
 import { RsvpWidget } from "@/components/RsvpWidget";
 import { DinnerBackground } from "@/components/DinnerBackground";
 import { Reveal } from "@/components/Reveal";
 import Image from "next/image";
+import Link from "next/link";
+import { dinnerSlug } from "@/lib/dinner-permalink";
+import { pageMetadata, ogImageForProgram } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+type SearchParams = Promise<{ program?: string }>;
 
 const HOW_IT_WORKS: [string, string][] = [
   ["Show up hungry", "Doors open around 5:45. First pies hit the table at 6."],
@@ -20,10 +26,34 @@ const HOW_IT_WORKS: [string, string][] = [
   ],
 ];
 
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}): Promise<Metadata> {
+  const { program: programSlug } = await searchParams;
+  const program = programSlug ? await getProgramBySlug(programSlug) : null;
+  const title = program
+    ? `${program.name} — Free Saturday Dinner`
+    : "Saturday Dinner";
+  const description = program?.tagline
+    ? `${program.tagline} Free weekly community dinner, all welcome.`
+    : "A free weekly community dinner in Philadelphia. Everyone is welcome at our table — RSVP for the next date.";
+  // Canonical is always the clean, un-parameterized path (Q2) — ?program=
+  // variants are content-identical today, so they share one canonical.
+  return pageMetadata({
+    title,
+    description,
+    path: "/dinner",
+    kind: "dinner",
+    imagePath: ogImageForProgram(program),
+  });
+}
+
 export default async function DinnerPage({
   searchParams,
 }: {
-  searchParams: Promise<{ program?: string }>;
+  searchParams: SearchParams;
 }) {
   const { program: programSlug } = await searchParams;
   const program = programSlug ? await getProgramBySlug(programSlug) : null;
@@ -93,6 +123,9 @@ export default async function DinnerPage({
   const recentNames = attendees
     .map((r) => r.name)
     .filter((n): n is string => !!n);
+
+  const dinnerProgram = program ?? (await getProgramById(dinner.programId));
+  const permalink = `/dinner/${dinnerSlug(dinner, dinnerProgram)}`;
 
   return (
     <div
@@ -263,6 +296,20 @@ export default async function DinnerPage({
           {dinner.description}
         </p>
       )}
+
+      <p className="ds-wrap" style={{ textAlign: "center", padding: "4px 0" }}>
+        <Link
+          href={permalink}
+          style={{
+            color: `var(--brand-accent, ${brand.accent})`,
+            fontWeight: 700,
+            fontSize: 14.5,
+            textDecoration: "none",
+          }}
+        >
+          Details &amp; share this dinner →
+        </Link>
+      </p>
 
       {/* how it works */}
       <section className="ds-wrap" style={{ padding: "20px 0 40px" }}>
