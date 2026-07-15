@@ -347,6 +347,23 @@ body {
     background-image: url("/media/dinner-poster-desktop.jpg");
   }
 }
+/* CSS-driven poster for the full-bleed dinner-page hero (DinnerBackground).
+   Mirrors that hero's video framing: mobile favors the lower dinner scene
+   (position bottom) to keep the busy logo badge out from under the high copy;
+   desktop uses the landscape still centered. Correct per-viewport from first
+   paint — no JS flash, and no black hero before the video loads. */
+.ds-dinner-hero-poster {
+  background-image: url("/media/dinner-poster-mobile.jpg");
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+}
+@media (min-width: 640px) {
+  .ds-dinner-hero-poster {
+    background-image: url("/media/dinner-poster-desktop.jpg");
+    background-position: center;
+  }
+}
 .ds-dinner-scrim {
   background: linear-gradient(
     90deg,
