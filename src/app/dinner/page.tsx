@@ -1,12 +1,15 @@
 import { and, desc, eq, gte } from "drizzle-orm";
 import { getDb } from "@/db";
 import { dinners, rsvps } from "@/db/schema";
-import { getProgramBySlug } from "@/lib/programs";
+import { getProgramBySlug, defaultProgramIdForKind } from "@/lib/programs";
 import { formatDate } from "@/lib/utils";
 import { brandForProgram, brandForKind } from "@/lib/brands";
+import { loadCommunitySections } from "@/lib/communitySections";
 import { RsvpWidget } from "@/components/RsvpWidget";
 import { DinnerBackground } from "@/components/DinnerBackground";
 import { Reveal } from "@/components/Reveal";
+import { AlbumSection } from "@/components/AlbumSection";
+import { Board } from "@/components/Board";
 import Image from "next/image";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +31,11 @@ export default async function DinnerPage({
   const { program: programSlug } = await searchParams;
   const program = programSlug ? await getProgramBySlug(programSlug) : null;
   const brand = program ? brandForProgram(program) : brandForKind("dinner");
+  const programId = program?.id ?? (await defaultProgramIdForKind("dinner"));
+  const { albumSection, boardPosts, myVotes } = await loadCommunitySections(
+    programId,
+    brand.brandKey,
+  );
 
   const db = getDb();
   const today = new Date().toISOString().slice(0, 10);
@@ -80,6 +88,26 @@ export default async function DinnerPage({
             </p>
           </div>
         </div>
+
+        {programId && (
+          <>
+            <div className="ds-wrap" style={{ padding: "0 0 50px" }}>
+              <AlbumSection
+                programId={programId}
+                kind="dinner"
+                albums={albumSection}
+              />
+            </div>
+            <div className="ds-wrap" style={{ padding: "0 0 60px" }}>
+              <Board
+                programId={programId}
+                kind="dinner"
+                posts={boardPosts}
+                myVotes={myVotes}
+              />
+            </div>
+          </>
+        )}
       </div>
     );
   }
@@ -304,6 +332,26 @@ export default async function DinnerPage({
           ))}
         </div>
       </section>
+
+      {programId && (
+        <>
+          <section className="ds-wrap" style={{ padding: "0 0 50px" }}>
+            <AlbumSection
+              programId={programId}
+              kind="dinner"
+              albums={albumSection}
+            />
+          </section>
+          <section className="ds-wrap" style={{ padding: "0 0 60px" }}>
+            <Board
+              programId={programId}
+              kind="dinner"
+              posts={boardPosts}
+              myVotes={myVotes}
+            />
+          </section>
+        </>
+      )}
     </div>
   );
 }

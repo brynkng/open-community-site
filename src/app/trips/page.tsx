@@ -1,10 +1,19 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
-import { trips, tripInterest, tripPollOptions } from "@/db/schema";
-import { getProgramBySlug } from "@/lib/programs";
+import {
+  trips,
+  tripInterest,
+  tripPollOptions,
+  tripComments,
+} from "@/db/schema";
+import { getProgramBySlug, defaultProgramIdForKind } from "@/lib/programs";
 import { brandForProgram, brandForKind } from "@/lib/brands";
+import { getTripComments } from "@/lib/board";
+import { loadCommunitySections } from "@/lib/communitySections";
 import { TripCard } from "@/components/TripCard";
 import { Reveal } from "@/components/Reveal";
+import { AlbumSection } from "@/components/AlbumSection";
+import { Board } from "@/components/Board";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +25,7 @@ export default async function TripsPage({
   const { program: programSlug } = await searchParams;
   const program = programSlug ? await getProgramBySlug(programSlug) : null;
   const brand = program ? brandForProgram(program) : brandForKind("trip");
+  const programId = program?.id ?? (await defaultProgramIdForKind("trip"));
 
   const db = getDb();
   const where = program
@@ -33,14 +43,19 @@ export default async function TripsPage({
     number,
     (typeof tripPollOptions.$inferSelect)[]
   >();
+  const commentsByTrip = new Map<
+    number,
+    (typeof tripComments.$inferSelect)[]
+  >();
   if (ids.length) {
-    const [interestRows, optionRows] = await Promise.all([
+    const [interestRows, optionRows, commentRows] = await Promise.all([
       db.select().from(tripInterest).where(inArray(tripInterest.tripId, ids)),
       db
         .select()
         .from(tripPollOptions)
         .where(inArray(tripPollOptions.tripId, ids))
         .orderBy(asc(tripPollOptions.sortOrder), asc(tripPollOptions.id)),
+      Promise.all(ids.map((id) => getTripComments(id))),
     ]);
     for (const r of interestRows)
       counts.set(r.tripId, (counts.get(r.tripId) || 0) + r.partySize);
@@ -49,7 +64,15 @@ export default async function TripsPage({
       list.push(o);
       optionsByTrip.set(o.tripId, list);
     }
+    ids.forEach((id, i) => commentsByTrip.set(id, commentRows[i]));
   }
+
+  // Albums + board for the trip program (server-fetched so the client
+  // sections don't need their own data-fetch round trip).
+  const { albumSection, boardPosts, myVotes } = await loadCommunitySections(
+    programId,
+    brand.brandKey,
+  );
 
   return (
     <div data-brand={brand.brandKey} className="ds-page">
@@ -142,6 +165,7 @@ export default async function TripsPage({
               trip={trip}
               interested={counts.get(trip.id) || 0}
               pollOptions={optionsByTrip.get(trip.id) ?? []}
+              comments={commentsByTrip.get(trip.id) ?? []}
               delay={Math.min(i, 3) as 0 | 1 | 2 | 3}
             />
           ))
@@ -183,6 +207,26 @@ export default async function TripsPage({
           </p>
         </Reveal>
       </section>
+
+      {programId && (
+        <>
+          <section className="ds-wrap" style={{ padding: "0 0 50px" }}>
+            <AlbumSection
+              programId={programId}
+              kind="trip"
+              albums={albumSection}
+            />
+          </section>
+          <section className="ds-wrap" style={{ padding: "0 0 60px" }}>
+            <Board
+              programId={programId}
+              kind="trip"
+              posts={boardPosts}
+              myVotes={myVotes}
+            />
+          </section>
+        </>
+      )}
     </div>
   );
 }
