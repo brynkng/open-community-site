@@ -1,0 +1,9 @@
+# docs/solutions — codified project knowledge
+
+Durable learning docs that ground future `/ce-brainstorm` and `/ce-plan` work. The
+`ce-learnings-researcher` agent searches this directory by frontmatter before planning.
+
+- [Data model & database](./data-model-and-database.md) — D1 + Drizzle schema, tables, indexes, migrations.
+- [Programs layer](./programs-layer-architecture.md) — branded event series with no code (`kind` + `programId`).
+- [App architecture & integrations](./app-architecture-and-integrations.md) — App Router, server actions, auth, Instagram/Resend/R2/KV/cron.
+- [Coding conventions](./coding-conventions.md) — patterns to follow when adding features.

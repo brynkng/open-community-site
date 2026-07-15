@@ -7,6 +7,7 @@ so the only remaining step — deploying — must run here, on this machine.
 ## What this project is
 
 A **mobile-first community website** for a group that runs multiple **branded programs**:
+
 - **Nomadic Bike Philly** — Sunday bike rides (bikes + coffee, Philly)
 - **Saturday Dinner** — free weekly community dinner (has a background-video hero)
 - **Community Trips** — one-off trips with an interest list + a "best time" availability poll
@@ -15,6 +16,26 @@ Features: RSVPs + live headcounts, a newsletter (Resend), one-click **Instagram 
 an organizer admin, automatic **day-before reminders** and **trip-date-confirmed** emails, and a
 **Programs** layer so new branded event series can be added from the admin with no code.
 
+## Commands
+
+```bash
+npm run dev               # local dev (OpenNext dev shim; D1 works locally)
+npm run typecheck         # tsc --noEmit
+npm run build             # OpenNext build (must pass before deploy)
+npm run db:migrate:local  # apply migrations/ to local D1
+npm run db:migrate:remote # apply migrations/ to remote D1
+```
+
+## Codebase knowledge (read before planning features)
+
+Durable, codified context lives in **`docs/solutions/`** — the `ce-learnings-researcher`
+agent (used by `/ce-brainstorm` and `/ce-plan`) searches it by frontmatter:
+
+- `data-model-and-database.md` — D1 + Drizzle schema, tables, indexes, migrations
+- `programs-layer-architecture.md` — branded event series with no code (`kind` + `programId`)
+- `app-architecture-and-integrations.md` — App Router, server actions, auth, IG/Resend/R2/KV/cron
+- `coding-conventions.md` — patterns to follow when adding features
+
 ## Stack
 
 Next.js 15 (App Router) + React 19 · deployed to **Cloudflare Workers** via
@@ -22,7 +43,7 @@ Next.js 15 (App Router) + React 19 · deployed to **Cloudflare Workers** via
 **KV** (Instagram token) · **Resend** (email) · a companion **Cron Worker** in `cron-worker/`.
 Admin auth = single password → signed cookie (jose). Everything targets **free tiers**.
 
-## PRIMARY TASK — deploy it publicly
+## First-time deploy (if not yet deployed)
 
 The owner (Bryan) is on Cloudflare. A turnkey script already exists. Run:
 
@@ -47,6 +68,7 @@ prompt for confirmation, answer `y`.
 
 **Optional for first deploy:** Instagram and email are OFF until their secrets are set — the site
 is fully usable without them. Add later:
+
 ```bash
 npx wrangler secret put RESEND_API_KEY EMAIL_FROM
 npx wrangler secret put IG_USER_ID IG_APP_ID IG_APP_SECRET IG_SEED_LONG_LIVED_TOKEN
@@ -68,6 +90,15 @@ Publishing is free with **no App Review** because you post to your OWN IG accoun
 Business/Creator, link a Facebook Page, make a Meta app in dev mode with that account as admin,
 grant `instagram_content_publish`, and seed a long-lived token. Images are served from the R2
 public URL; the daily cron refreshes the token. See README for the full walkthrough.
+
+## Conventions (quick reference — full detail in docs/solutions/)
+
+- Mutations are **Next.js Server Actions** (`"use server"`); only cron uses HTTP routes.
+- DB: call `getDb()` **per-request**, never a module singleton. Read env via `env()`.
+- Schema has **no FK constraints** — relationships are convention-only; dedupe via UNIQUE indexes.
+- Migrations are **hand-written, idempotent, wrangler-applied** (drizzle-kit is generate-only).
+- Email is **best-effort** — never fail a mutation because a send failed.
+- New branded series = **data, not code**: add a `programs` row of the matching `kind`.
 
 ## Known follow-ups (not blockers)
 
