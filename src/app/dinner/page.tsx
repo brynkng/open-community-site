@@ -95,10 +95,14 @@ export default async function DinnerPage({
           <Image
             src="/brands/sidewalk-story.png"
             alt={`${brand.name} logo`}
-            width={110}
-            height={110}
+            width={320}
+            height={320}
             className="ds-float-slow mx-auto"
-            style={{ mixBlendMode: "multiply" }}
+            style={{
+              width: "min(320px, 72vw)",
+              height: "auto",
+              mixBlendMode: "multiply",
+            }}
           />
           <h1
             style={{

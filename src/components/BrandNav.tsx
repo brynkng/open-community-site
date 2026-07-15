@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Program } from "@/db/schema";
@@ -39,10 +38,6 @@ const STATIC_LINKS: {
 export function BrandNav({ programs }: { programs: Program[] }) {
   const pathname = usePathname();
   const activeBrand = activeBrandKey(pathname);
-  const activeProgram = programs.find(
-    (p) => brandForProgram(p).brandKey === activeBrand,
-  );
-  const brand = activeProgram ? brandForProgram(activeProgram) : null;
 
   return (
     <header
@@ -61,57 +56,8 @@ export function BrandNav({ programs }: { programs: Program[] }) {
           fontWeight: 800,
         }}
       >
-        {activeBrand === "ss" ? (
-          <Image
-            src="/brands/sidewalk-story.png"
-            alt="Sidewalk Story logo"
-            width={34}
-            height={34}
-            style={{ borderRadius: "50%", objectFit: "cover" }}
-          />
-        ) : activeBrand === "nb" ? (
-          <Image
-            src="/brands/nomadic-bike-philly.jpg"
-            alt="Nomad Bike Philly logo"
-            width={34}
-            height={34}
-            style={{ borderRadius: "50%", objectFit: "cover" }}
-          />
-        ) : activeBrand === "ft" ? (
-          <span
-            aria-hidden
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: "50%",
-              background: brand?.accent ?? "var(--ds-ink)",
-              color: "#fff",
-              display: "grid",
-              placeItems: "center",
-              fontSize: 15,
-            }}
-          >
-            ⛺
-          </span>
-        ) : (
-          <span
-            aria-hidden
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: "50%",
-              background: "var(--ds-ink)",
-              color: "#fff",
-              display: "grid",
-              placeItems: "center",
-              fontSize: 14,
-            }}
-          >
-            S
-          </span>
-        )}
         <span className="ds-brand-word" style={{ fontSize: 15 }}>
-          {brand?.name ?? "Sidewalk Story"}
+          Sidewalk Story
         </span>
       </Link>
 
