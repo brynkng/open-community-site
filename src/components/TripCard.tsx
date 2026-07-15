@@ -2,30 +2,33 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { Trip, TripPollOption } from "@/db/schema";
+import type { Trip, TripPollOption, TripComment } from "@/db/schema";
 import { env } from "@/lib/env";
 import { formatDate } from "@/lib/utils";
 import { Reveal } from "@/components/Reveal";
 import { TripSignup } from "@/components/TripSignup";
+import { TripComments } from "@/components/TripComments";
 
 /**
- * Derives a status chip from the trip's existing fields — no new schema.
- * Cancelled/confirmed take priority; otherwise "RSVPs open" while the date
- * poll is open, else "Still planning".
+ * Derives the trip's `open`/`planning` status from its existing fields — no
+ * new schema (KTD6, phases 5-8 plan): `planning` while the date poll is open
+ * and no final date has been set; otherwise `open` (either a final date is
+ * locked in, or the poll was closed without one). `cancelled` short-circuits
+ * both.
  */
-function statusChip(trip: Trip): {
-  label: string;
-  tone: "confirmed" | "open" | "planning" | "cancelled";
-} {
-  if (trip.status === "cancelled")
-    return { label: "Cancelled", tone: "cancelled" };
-  if (trip.finalDate) return { label: "Confirmed", tone: "confirmed" };
-  if (trip.pollOpen) return { label: "RSVPs open", tone: "open" };
-  return { label: "Still planning", tone: "planning" };
+function tripStatus(trip: Trip): "planning" | "open" | "cancelled" {
+  if (trip.status === "cancelled") return "cancelled";
+  if (trip.pollOpen && !trip.finalDate) return "planning";
+  return "open";
 }
 
+const CHIP_LABEL: Record<string, string> = {
+  planning: "Still planning",
+  open: "RSVPs open",
+  cancelled: "Cancelled",
+};
+
 const CHIP_BG: Record<string, string> = {
-  confirmed: "var(--brand-accent, #2E5339)",
   open: "var(--brand-accent, #2E5339)",
   planning: "var(--brand-accent-2, #6a8f5c)",
   cancelled: "#8a5a4a",
@@ -35,19 +38,22 @@ export function TripCard({
   trip,
   interested,
   pollOptions,
+  comments,
   delay,
 }: {
   trip: Trip;
   interested: number;
   pollOptions: TripPollOption[];
+  comments: TripComment[];
   delay?: 0 | 1 | 2 | 3;
 }) {
   const [open, setOpen] = useState(false);
   const img = trip.imageKey
     ? `${env().R2_PUBLIC_BASE_URL.replace(/\/$/, "")}/${trip.imageKey}`
     : null;
-  const chip = statusChip(trip);
-  const canSignUp = trip.status !== "cancelled" && !trip.finalDate;
+  const status = tripStatus(trip);
+  const chip = { label: CHIP_LABEL[status], tone: status };
+  const canSignUp = status !== "cancelled";
 
   return (
     <Reveal
@@ -165,13 +171,20 @@ export function TripCard({
             borderTop: "1px solid rgba(43,33,24,.08)",
             padding: "clamp(18px, 3vw, 28px)",
             background: "rgba(46,83,57,.035)",
+            display: "grid",
+            gap: 20,
           }}
         >
+          {/* `planning` shows the existing date poll + interest form;
+              `open` shows the same form with its poll fieldset naturally
+              hidden (TripSignup's `showPoll = pollOpen && options.length`) —
+              both states use it as the RSVP path (KTD6). */}
           <TripSignup
             tripId={trip.id}
             pollOpen={trip.pollOpen}
             options={pollOptions}
           />
+          <TripComments tripId={trip.id} comments={comments} />
         </div>
       )}
     </Reveal>

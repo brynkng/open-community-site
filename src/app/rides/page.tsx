@@ -3,13 +3,16 @@ import Image from "next/image";
 import { and, asc, desc, eq, gte, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
 import { rides, rsvps } from "@/db/schema";
-import { getProgramBySlug } from "@/lib/programs";
+import { getProgramBySlug, defaultProgramIdForKind } from "@/lib/programs";
 import { formatDate } from "@/lib/utils";
 import { brandForProgram, brandForKind } from "@/lib/brands";
+import { loadCommunitySections } from "@/lib/communitySections";
 import { RideCard } from "@/components/RideCard";
 import { RsvpWidget } from "@/components/RsvpWidget";
 import { Reveal } from "@/components/Reveal";
 import { pageMetadata, ogImageForProgram } from "@/lib/seo";
+import { AlbumSection } from "@/components/AlbumSection";
+import { Board } from "@/components/Board";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +54,11 @@ export default async function RidesPage({
   const { program: programSlug } = await searchParams;
   const program = programSlug ? await getProgramBySlug(programSlug) : null;
   const brand = program ? brandForProgram(program) : brandForKind("ride");
+  const programId = program?.id ?? (await defaultProgramIdForKind("ride"));
+  const { albumSection, boardPosts, myVotes } = await loadCommunitySections(
+    programId,
+    brand.brandKey,
+  );
 
   const db = getDb();
   const today = new Date().toISOString().slice(0, 10);
@@ -386,6 +394,26 @@ export default async function RidesPage({
           </div>
         )}
       </section>
+
+      {programId && (
+        <>
+          <section className="ds-wrap" style={{ padding: "0 0 50px" }}>
+            <AlbumSection
+              programId={programId}
+              kind="ride"
+              albums={albumSection}
+            />
+          </section>
+          <section className="ds-wrap" style={{ padding: "0 0 60px" }}>
+            <Board
+              programId={programId}
+              kind="ride"
+              posts={boardPosts}
+              myVotes={myVotes}
+            />
+          </section>
+        </>
+      )}
     </div>
   );
 }

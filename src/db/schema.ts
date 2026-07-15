@@ -237,6 +237,153 @@ export const tripPollVotes = sqliteTable(
   }),
 );
 
+// ==========================================================================
+// Community (v4/v5): photo albums, board, trip comments, rate limiting
+// ==========================================================================
+
+/**
+ * A photo album for a program (e.g. "2026 rides", "Dinner nights"). One album
+ * per program can be flagged `main` (the default/featured album). No login
+ * required to upload — see `src/app/community/actions.ts`.
+ */
+export const albums = sqliteTable(
+  "albums",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    programId: integer("program_id"), // FK -> programs.id (convention-only)
+    name: text("name").notNull(),
+    main: integer("main", { mode: "boolean" }).notNull().default(false),
+    sortOrder: integer("sort_order").notNull().default(0),
+    hidden: integer("hidden", { mode: "boolean" }).notNull().default(false),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
+  },
+  (t) => ({
+    programIdx: index("albums_program_idx").on(t.programId),
+  }),
+);
+
+/** A single photo in an album, anonymously uploaded to R2. */
+export const albumPhotos = sqliteTable(
+  "album_photos",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    albumId: integer("album_id").notNull(),
+    takenDate: text("taken_date"), // ISO date, for date-grouped display
+    imageKey: text("image_key").notNull(), // R2 object key
+    caption: text("caption"),
+    hidden: integer("hidden", { mode: "boolean" }).notNull().default(false),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
+  },
+  (t) => ({
+    albumIdx: index("album_photos_album_idx").on(t.albumId),
+  }),
+);
+
+/**
+ * A community board post (title + optional body/name) for a program. `hidden`
+ * soft-moderates; `voteScore` is maintained incrementally by `voteAction`.
+ */
+export const boardPosts = sqliteTable(
+  "board_posts",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    programId: integer("program_id"), // FK -> programs.id (convention-only)
+    title: text("title").notNull(),
+    body: text("body"),
+    authorName: text("author_name"),
+    voteScore: integer("vote_score").notNull().default(0),
+    hidden: integer("hidden", { mode: "boolean" }).notNull().default(false),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
+  },
+  (t) => ({
+    programIdx: index("board_posts_program_idx").on(t.programId),
+  }),
+);
+
+/** A comment on a board post. */
+export const boardComments = sqliteTable(
+  "board_comments",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    postId: integer("post_id").notNull(),
+    authorName: text("author_name"),
+    text: text("text").notNull(),
+    hidden: integer("hidden", { mode: "boolean" }).notNull().default(false),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
+  },
+  (t) => ({
+    postIdx: index("board_comments_post_idx").on(t.postId),
+  }),
+);
+
+/**
+ * One up/down vote per (post, voter). `voterKey` is a random value issued as
+ * a long-lived cookie (see `voteAction`) — best-effort dedupe, not identity.
+ */
+export const boardVotes = sqliteTable(
+  "board_votes",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    postId: integer("post_id").notNull(),
+    voterKey: text("voter_key").notNull(),
+    dir: integer("dir").notNull(), // +1 or -1
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
+  },
+  (t) => ({
+    postIdx: index("board_votes_post_idx").on(t.postId),
+    uniqueIdx: index("board_votes_unique_idx").on(t.postId, t.voterKey),
+  }),
+);
+
+/** "Trip talk" — a comment thread on a single trip. */
+export const tripComments = sqliteTable(
+  "trip_comments",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    tripId: integer("trip_id").notNull(),
+    authorName: text("author_name"),
+    text: text("text").notNull(),
+    hidden: integer("hidden", { mode: "boolean" }).notNull().default(false),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
+  },
+  (t) => ({
+    tripIdx: index("trip_comments_trip_idx").on(t.tripId),
+  }),
+);
+
+/**
+ * A shared per-IP rate-limit ledger for every public community write (KTD4).
+ * `bucket` = `"<action>:<hashedIp>"` — the IP is hashed before it ever reaches
+ * this table (see `src/lib/ratelimit.ts`); a row is a single hit, counted
+ * within a rolling window in app code (no TTL/expiry column — old rows are
+ * pruned by a future cron job, tracked as a follow-up).
+ */
+export const rateHits = sqliteTable(
+  "rate_hits",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    bucket: text("bucket").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
+  },
+  (t) => ({
+    bucketIdx: index("rate_hits_bucket_idx").on(t.bucket, t.createdAt),
+  }),
+);
+
 // --- Types ---
 export type Program = typeof programs.$inferSelect;
 export type Dinner = typeof dinners.$inferSelect;
@@ -248,3 +395,10 @@ export type Trip = typeof trips.$inferSelect;
 export type TripInterest = typeof tripInterest.$inferSelect;
 export type TripPollOption = typeof tripPollOptions.$inferSelect;
 export type TripPollVote = typeof tripPollVotes.$inferSelect;
+export type Album = typeof albums.$inferSelect;
+export type AlbumPhoto = typeof albumPhotos.$inferSelect;
+export type BoardPost = typeof boardPosts.$inferSelect;
+export type BoardComment = typeof boardComments.$inferSelect;
+export type BoardVote = typeof boardVotes.$inferSelect;
+export type TripComment = typeof tripComments.$inferSelect;
+export type RateHit = typeof rateHits.$inferSelect;
