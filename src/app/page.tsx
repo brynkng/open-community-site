@@ -175,12 +175,6 @@ export default async function Home() {
           textAlign: "center",
         }}
       >
-        <p
-          className="ds-chip"
-          style={{ background: "rgba(43,33,24,.07)", marginBottom: 16 }}
-        >
-          South Philly · est. on a stoop
-        </p>
         <h1
           style={{
             fontFamily: "var(--font-ft)",
