@@ -59,6 +59,6 @@
     // project's `turnstile-spin` skill), then paste its site key here.
     // The paired secret key is NOT a var — set it with:
     //   npx wrangler secret put TURNSTILE_SECRET_KEY
-    "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "REPLACE_WITH_TURNSTILE_SITE_KEY",
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAAD2jVy0JqiWiD9UO",
   },
 }
