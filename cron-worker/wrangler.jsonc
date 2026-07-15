@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "community-cron",
+  "main": "index.js",
+  "compatibility_date": "2025-03-25",
+  // 08:10 UTC daily: refresh the IG token. 08:15 UTC daily: send reminders.
+  // (Two entries so both routes get hit; adjust times to your timezone.)
+  "triggers": {
+    "crons": ["10 8 * * *", "15 8 * * *"]
+  },
+  "vars": {
+    // The deployed URL of your main site, no trailing slash.
+    "SITE_URL": "https://community-site.YOURNAME.workers.dev"
+  }
+  // Set the secret with:  wrangler secret put CRON_SECRET   (must match the main app)
+}

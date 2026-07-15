@@ -1,0 +1,48 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "community-site",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-03-25",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  // --- D1: SQLite database (free tier) ---
+  // Create with: wrangler d1 create community_db
+  // then paste the returned database_id below.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "community_db",
+      "database_id": "56b7f92e-7bde-42a6-bb77-4ff74d4a6fd8",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // --- R2: object storage for public images the IG API can read (free tier) ---
+  // Create with: wrangler r2 bucket create community-media
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "community-media"
+    }
+  ],
+  // --- KV: stores the rotating long-lived Instagram token ---
+  // Create with: wrangler kv namespace create IG_TOKENS
+  "kv_namespaces": [
+    {
+      "binding": "IG_TOKENS",
+      "id": "40b75c039eec47dfab2d403871e10865"
+    }
+  ],
+  // NOTE: scheduled jobs live in the companion Worker in ./cron-worker (Cloudflare
+  // Cron Triggers invoke a scheduled() handler, which the OpenNext worker doesn't
+  // expose). That worker pings the /api/cron/* routes below on a schedule.
+  "vars": {
+    "NEXT_PUBLIC_SITE_NAME": "Our Community",
+    "R2_PUBLIC_BASE_URL": "https://pub-b391e93c1eae471ebabc5101ce9a8e6a.r2.dev"
+  }
+}

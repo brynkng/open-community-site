@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-orange-50 text-ink antialiased;
+}
+
+/* Reusable primitives — these mirror components we can push to Claude Design later. */
+@layer components {
+  /* min-h-11 (44px) keeps tap targets comfortable on touch screens. */
+  .btn {
+    @apply inline-flex min-h-11 items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-brand/40 disabled:opacity-50;
+    touch-action: manipulation;
+  }
+  .btn-primary {
+    @apply btn bg-brand text-white hover:bg-brand-dark active:bg-brand-dark;
+  }
+  .btn-secondary {
+    @apply btn border border-brand/30 bg-white text-brand hover:bg-brand-light/40 active:bg-brand-light/40;
+  }
+  .card {
+    @apply rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:p-6;
+  }
+  /* text-base (16px) on the input itself stops iOS Safari from auto-zooming on focus. */
+  .input {
+    @apply w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-base focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 sm:py-2;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium text-stone-700;
+  }
+}
+
+/* Hide the horizontal scrollbar on the mobile nav strip. */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
