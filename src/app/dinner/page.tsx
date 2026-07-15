@@ -167,8 +167,13 @@ export default async function DinnerPage({
     >
       {/* looping video backdrop behind the hero only */}
       <section
-        className="relative min-h-[70vh] overflow-hidden rounded-3xl sm:min-h-[520px]"
-        style={{ marginBottom: 8 }}
+        className="relative -mt-8 min-h-[70vh] overflow-hidden sm:-mt-10 sm:min-h-[520px]"
+        style={{
+          marginBottom: 8,
+          marginLeft: "calc(50% - 50vw)",
+          marginRight: "calc(50% - 50vw)",
+          width: "100vw",
+        }}
       >
         <DinnerBackground />
         <div
