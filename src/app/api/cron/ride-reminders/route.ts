@@ -26,24 +26,56 @@ export async function GET(req: Request) {
   const date = tomorrowISO();
   let sent = 0;
 
-  const upcomingRides = await db.select().from(rides).where(eq(rides.date, date));
-  const upcomingDinners = await db.select().from(dinners).where(eq(dinners.date, date));
+  const upcomingRides = await db
+    .select()
+    .from(rides)
+    .where(eq(rides.date, date));
+  const upcomingDinners = await db
+    .select()
+    .from(dinners)
+    .where(eq(dinners.date, date));
 
-  const targets: { kind: "ride" | "dinner"; id: number; title: string; when: string; where: string | null }[] = [
+  const targets: {
+    kind: "ride" | "dinner";
+    id: number;
+    title: string;
+    when: string;
+    where: string | null;
+  }[] = [
     ...upcomingRides
       .filter((r) => r.status === "published")
-      .map((r) => ({ kind: "ride" as const, id: r.id, title: r.title, when: r.startTime ?? "", where: r.meetLocation })),
+      .map((r) => ({
+        kind: "ride" as const,
+        id: r.id,
+        title: r.title,
+        when: r.startTime ?? "",
+        where: r.meetLocation,
+      })),
     ...upcomingDinners
       .filter((d) => d.status === "published")
-      .map((d) => ({ kind: "dinner" as const, id: d.id, title: d.title, when: d.startTime ?? "", where: d.location })),
+      .map((d) => ({
+        kind: "dinner" as const,
+        id: d.id,
+        title: d.title,
+        when: d.startTime ?? "",
+        where: d.location,
+      })),
   ];
 
   for (const t of targets) {
     const pending = await db
       .select()
       .from(rsvps)
-      .where(and(eq(rsvps.kind, t.kind), eq(rsvps.refId, t.id), isNull(rsvps.reminderSentAt)));
+      .where(
+        and(
+          eq(rsvps.kind, t.kind),
+          eq(rsvps.refId, t.id),
+          isNull(rsvps.reminderSentAt),
+        ),
+      );
     for (const r of pending) {
+      // Anonymous RSVPs (quick-yes, or named without an email) have nothing to remind.
+      if (!r.email) continue;
       try {
         await sendEmail({
           to: r.email,
@@ -56,7 +88,10 @@ export async function GET(req: Request) {
             "Reminder from your community group.",
           ),
         });
-        await db.update(rsvps).set({ reminderSentAt: new Date() }).where(eq(rsvps.id, r.id));
+        await db
+          .update(rsvps)
+          .set({ reminderSentAt: new Date() })
+          .where(eq(rsvps.id, r.id));
         sent++;
       } catch {
         // skip; will retry next run since reminderSentAt stays null

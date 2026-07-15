@@ -22,7 +22,9 @@ export const programs = sqliteTable(
     accentColor: text("accent_color").notNull().default("#c2410c"),
     sortOrder: integer("sort_order").notNull().default(0),
     active: integer("active", { mode: "boolean" }).notNull().default(true),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
   },
   (t) => ({
     activeIdx: index("programs_active_idx").on(t.active, t.sortOrder),
@@ -45,7 +47,9 @@ export const dinners = sqliteTable("dinners", {
   status: text("status", { enum: ["published", "draft", "cancelled"] })
     .notNull()
     .default("published"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(now),
 });
 
 /**
@@ -69,7 +73,9 @@ export const rides = sqliteTable(
     status: text("status", { enum: ["published", "draft", "cancelled"] })
       .notNull()
       .default("published"),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
   },
   (t) => ({
     dateIdx: index("rides_date_idx").on(t.date),
@@ -78,7 +84,10 @@ export const rides = sqliteTable(
 
 /**
  * RSVPs for either a dinner or a ride. `kind` + `refId` point at the target.
- * No login required for attendees — name + email + party size.
+ * No login required for attendees. Supports three shapes: a quick-yes (no
+ * name/email, `quick: true`, `partySize: 1`), a named RSVP with email (app-level
+ * deduped on `(kind, refId, email)` in `rsvpAction`), and a named RSVP with no
+ * email at all (always inserted — nothing to dedupe on).
  */
 export const rsvps = sqliteTable(
   "rsvps",
@@ -86,17 +95,24 @@ export const rsvps = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     kind: text("kind", { enum: ["dinner", "ride"] }).notNull(),
     refId: integer("ref_id").notNull(),
-    name: text("name").notNull(),
-    email: text("email").notNull(),
+    name: text("name"),
+    email: text("email"),
     partySize: integer("party_size").notNull().default(1),
     note: text("note"),
+    quick: integer("quick", { mode: "boolean" }).notNull().default(false),
     reminderSentAt: integer("reminder_sent_at", { mode: "timestamp" }),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
   },
   (t) => ({
     targetIdx: index("rsvps_target_idx").on(t.kind, t.refId),
-    // Prevent the same email double-booking one event (enforced in app + this index).
-    uniqueIdx: index("rsvps_unique_idx").on(t.kind, t.refId, t.email),
+    // Non-unique — dedupe for named RSVPs with an email is app-level in rsvpAction.
+    targetEmailIdx: index("rsvps_target_email_idx").on(
+      t.kind,
+      t.refId,
+      t.email,
+    ),
   }),
 );
 
@@ -109,7 +125,9 @@ export const subscribers = sqliteTable("subscribers", {
   name: text("name"),
   confirmed: integer("confirmed", { mode: "boolean" }).notNull().default(false),
   unsubToken: text("unsub_token").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(now),
 });
 
 /**
@@ -127,7 +145,9 @@ export const igPosts = sqliteTable("ig_posts", {
     .notNull()
     .default("pending"),
   error: text("error"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(now),
   publishedAt: integer("published_at", { mode: "timestamp" }),
 });
 
@@ -152,7 +172,9 @@ export const trips = sqliteTable(
     status: text("status", { enum: ["published", "draft", "cancelled"] })
       .notNull()
       .default("published"),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
   },
   (t) => ({
     statusIdx: index("trips_status_idx").on(t.status),
@@ -169,7 +191,9 @@ export const tripInterest = sqliteTable(
     email: text("email").notNull(),
     partySize: integer("party_size").notNull().default(1),
     note: text("note"),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
   },
   (t) => ({
     tripIdx: index("trip_interest_trip_idx").on(t.tripId),
@@ -185,7 +209,9 @@ export const tripPollOptions = sqliteTable(
     tripId: integer("trip_id").notNull(),
     label: text("label").notNull(), // e.g. "Sat Sep 19" or "Weekend of Oct 3"
     sortOrder: integer("sort_order").notNull().default(0),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
   },
   (t) => ({
     tripIdx: index("trip_poll_options_trip_idx").on(t.tripId),
@@ -201,7 +227,9 @@ export const tripPollVotes = sqliteTable(
     optionId: integer("option_id").notNull(),
     voterEmail: text("voter_email").notNull(),
     voterName: text("voter_name").notNull(),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(now),
   },
   (t) => ({
     tripIdx: index("trip_poll_votes_trip_idx").on(t.tripId),
