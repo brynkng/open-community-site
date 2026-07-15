@@ -10,3 +10,6 @@ next-env.d.ts
 cloudflare-env.d.ts
 tsconfig.tsbuildinfo
 .DS_Store
+
+# design handoff: keep source refs, ignore duplicated binaries (already in public/)
+design_handoff_community_site/assets/
