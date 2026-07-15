@@ -15,8 +15,10 @@ const PH_GRADS: Record<BrandKey, (hue: number) => string> = {
 };
 
 export interface PhotoData {
-  /** Real image path, e.g. `/photos/dinner-couch.jpg`. Omit to show the gradient placeholder. */
+  /** Real image path (the grid thumbnail), e.g. `/photos/dinner-couch.jpg`. Omit to show the gradient placeholder. */
   src?: string;
+  /** Full-size image URL for the viewer/lightbox. Falls back to `src` when absent. */
+  fullSrc?: string;
   /** Caption — shown as overlay text when there's no `src`, and as alt text when there is. */
   cap?: string;
   /** Brand whose gradient recipe to use for the placeholder (ignored once `src` is set). */

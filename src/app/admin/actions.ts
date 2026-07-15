@@ -694,9 +694,12 @@ export async function deleteContentAction(formData: FormData): Promise<void> {
       .from(albumPhotos)
       .where(eq(albumPhotos.id, id))
       .limit(1);
-    if (photo?.imageKey) {
+    const keys = [photo?.imageKey, photo?.thumbKey].filter(
+      (k): k is string => !!k,
+    );
+    for (const key of keys) {
       try {
-        await env().MEDIA.delete(photo.imageKey);
+        await env().MEDIA.delete(key);
       } catch {
         // Best-effort — don't block the row delete on an R2 failure.
       }

@@ -9,6 +9,7 @@ import {
   type FormState,
 } from "@/app/community/actions";
 import { brandForKind } from "@/lib/brands";
+import { makeUploadVersions } from "@/lib/imageResize";
 import { Photo, type PhotoData } from "@/components/Photo";
 import { PhotoLightbox } from "@/components/PhotoLightbox";
 import { Reveal } from "@/components/Reveal";
@@ -74,11 +75,39 @@ export function AlbumSection({
   const [uploading, setUploading] = useState(false);
   const [caption, setCaption] = useState("");
   const [uploadToken, setUploadToken] = useState("");
+  const [preparing, setPreparing] = useState(false);
   const uploadFormRef = useRef<HTMLFormElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadState, uploadFormAction, uploadPending] = useActionState<
     FormState,
     FormData
   >(uploadPhotoAction, null);
+
+  // Resize the chosen photo into a grid thumbnail + a capped full-size image
+  // in the browser, then submit both to the upload action. Falls back to the
+  // raw file if resizing isn't supported.
+  async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const file = fileInputRef.current?.files?.[0];
+    if (!file || !active) return;
+
+    const fd = new FormData();
+    fd.set("albumId", String(active.album.id));
+    fd.set("caption", caption);
+    fd.set("cf-turnstile-response", uploadToken);
+
+    setPreparing(true);
+    try {
+      const { full, thumb } = await makeUploadVersions(file);
+      fd.set("photo", full, "photo.jpg");
+      fd.set("thumb", thumb, "thumb.jpg");
+    } catch {
+      fd.set("photo", file); // resize unsupported → upload original
+    } finally {
+      setPreparing(false);
+    }
+    uploadFormAction(fd);
+  }
 
   useEffect(() => {
     if (createState?.ok) {
@@ -190,7 +219,7 @@ export function AlbumSection({
       {uploading && active && (
         <form
           ref={uploadFormRef}
-          action={uploadFormAction}
+          onSubmit={handleUpload}
           style={{
             display: "flex",
             gap: 8,
@@ -199,8 +228,8 @@ export function AlbumSection({
             alignItems: "center",
           }}
         >
-          <input type="hidden" name="albumId" value={active.album.id} />
           <input
+            ref={fileInputRef}
             type="file"
             name="photo"
             accept="image/*"
@@ -227,9 +256,9 @@ export function AlbumSection({
             className="ds-btn"
             style={{ background: `var(--brand-accent, ${brand.accent})` }}
             type="submit"
-            disabled={!uploadToken || uploadPending}
+            disabled={!uploadToken || uploadPending || preparing}
           >
-            {uploadPending ? "Uploading…" : "Upload"}
+            {preparing ? "Preparing…" : uploadPending ? "Uploading…" : "Upload"}
           </button>
           {uploadState && !uploadState.ok && (
             <p style={{ margin: 0, fontSize: 13, color: "#b42318" }}>

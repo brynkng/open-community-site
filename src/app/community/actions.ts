@@ -116,17 +116,32 @@ export async function uploadPhotoAction(
       : file.type.includes("gif")
         ? "gif"
         : "jpg";
-  const imageKey = `community/${programSlug}/${albumId}/${randomToken(8)}.${ext}`;
+  const base = `community/${programSlug}/${albumId}/${randomToken(8)}`;
+  const imageKey = `${base}.${ext}`;
 
   // ── R2 STORAGE SEAM ──────────────────────────────────────────────────────
   // This is the single point where a community photo is persisted to storage.
-  // A separate workstream is adding dedicated R2 photo-storage support; swap
-  // the MEDIA.put(...) call below to route through that helper. Keep `imageKey`
-  // as the stored object key so album_photos.image_key + R2_PUBLIC_BASE_URL and
-  // the admin delete path (deleteContentAction) stay consistent.
+  // The client sends a resized `photo` (full, capped) plus an optional `thumb`
+  // (grid thumbnail); we store both so the grid loads small images and the
+  // viewer loads the full one. Keep `imageKey`/`thumbKey` as the stored object
+  // keys so album_photos + R2_PUBLIC_BASE_URL and the admin delete path
+  // (deleteContentAction) stay consistent.
   await env().MEDIA.put(imageKey, await file.arrayBuffer(), {
     httpMetadata: { contentType: file.type || "image/jpeg" },
   });
+
+  let thumbKey: string | null = null;
+  const thumb = formData.get("thumb");
+  if (
+    thumb instanceof File &&
+    thumb.size > 0 &&
+    thumb.type.startsWith("image/")
+  ) {
+    thumbKey = `${base}-t.jpg`;
+    await env().MEDIA.put(thumbKey, await thumb.arrayBuffer(), {
+      httpMetadata: { contentType: "image/jpeg" },
+    });
+  }
 
   const takenDate = String(formData.get("takenDate") || "").trim() || null;
   const caption = String(formData.get("caption") || "").trim() || null;
@@ -134,6 +149,7 @@ export async function uploadPhotoAction(
   await db.insert(albumPhotos).values({
     albumId,
     imageKey,
+    thumbKey,
     takenDate,
     caption,
   });

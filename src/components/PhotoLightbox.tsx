@@ -145,7 +145,7 @@ export function PhotoLightbox({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={photo.src}
+          src={photo.fullSrc ?? photo.src}
           alt={photo.cap ?? ""}
           style={{
             maxWidth: "100%",

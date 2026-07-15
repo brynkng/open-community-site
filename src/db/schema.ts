@@ -271,7 +271,8 @@ export const albumPhotos = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     albumId: integer("album_id").notNull(),
     takenDate: text("taken_date"), // ISO date, for date-grouped display
-    imageKey: text("image_key").notNull(), // R2 object key
+    imageKey: text("image_key").notNull(), // R2 object key (full size, for the viewer)
+    thumbKey: text("thumb_key"), // R2 object key for the grid thumbnail (nullable → falls back to imageKey)
     caption: text("caption"),
     hidden: integer("hidden", { mode: "boolean" }).notNull().default(false),
     createdAt: integer("created_at", { mode: "timestamp" })

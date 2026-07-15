@@ -46,7 +46,10 @@ export async function loadCommunitySections(
           date: g.date,
           photos: g.photos.map((p) => ({
             id: p.id,
-            src: `${r2Base}/${p.imageKey}`,
+            // Grid uses the thumbnail (falls back to the full image for photos
+            // uploaded before thumbnails existed); the viewer uses the full.
+            src: `${r2Base}/${p.thumbKey ?? p.imageKey}`,
+            fullSrc: `${r2Base}/${p.imageKey}`,
             cap: p.caption ?? undefined,
             brand: brandKey,
           })),
