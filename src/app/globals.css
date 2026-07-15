@@ -260,6 +260,9 @@ body {
   margin-left: auto;
 }
 .ds-topnav .ds-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 9px 14px;
   border-radius: 999px;
   font-weight: 700;
