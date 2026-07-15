@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-// Mobile uses the portrait clip. Desktop should use a LANDSCAPE clip — until one
-// is provided, it falls back to the portrait file (object-cover crops it). To add
-// the desktop version: drop it at public/media/dinner-desktop.mp4 and set
-// DESKTOP_SRC below to "/media/dinner-desktop.mp4".
+// Mobile uses the portrait clip; desktop uses the landscape clip imported
+// alongside it (resolves the former "desktop reuses the mobile clip" follow-up).
 const MOBILE_SRC = "/media/dinner-mobile.mp4";
-const DESKTOP_SRC = "/media/dinner-mobile.mp4"; // TODO: swap to "/media/dinner-desktop.mp4"
+const DESKTOP_SRC = "/media/dinner-bg.mp4";
 const POSTER = "/media/dinner-poster.jpg";
 
 /**

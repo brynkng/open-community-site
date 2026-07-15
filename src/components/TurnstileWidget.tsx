@@ -24,19 +24,30 @@ declare global {
 }
 
 type TurnstileWidgetProps = {
-  /** Called with the fresh token whenever it (re)verifies, and with "" on expiry/error. */
-  onVerify?: (token: string) => void;
+  /**
+   * Called with the fresh token whenever it (re)verifies, and with "" on
+   * expiry/error. Named with an `Action` suffix per Next's convention for
+   * function props that cross into/within client component trees. Safe to
+   * pass here since both `TurnstileWidget` and its callers in this codebase
+   * are Client Components — no Server->Client serialization boundary is
+   * crossed — but callers that don't need it can just read the widget's own
+   * `cf-turnstile-response` hidden input from `FormData` instead.
+   */
+  onVerifyAction?: (token: string) => void;
   className?: string;
 };
 
 /**
  * Renders the Cloudflare Turnstile widget and surfaces the token both via a
  * `cf-turnstile-response` hidden input (so a parent `<form action={...}>` picks
- * it up in `FormData` automatically) and via the `onVerify` callback (for forms
- * that want to gate the submit button on a token being present). Handles
+ * it up in `FormData` automatically) and via the `onVerifyAction` callback (for
+ * forms that want to gate the submit button on a token being present). Handles
  * expiry/errors by resetting the token to "".
  */
-export function TurnstileWidget({ onVerify, className }: TurnstileWidgetProps) {
+export function TurnstileWidget({
+  onVerifyAction,
+  className,
+}: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const [token, setToken] = useState("");
@@ -47,7 +58,7 @@ export function TurnstileWidget({ onVerify, className }: TurnstileWidgetProps) {
 
     const handleToken = (t: string) => {
       setToken(t);
-      onVerify?.(t);
+      onVerifyAction?.(t);
     };
     const handleExpireOrError = () => handleToken("");
 
