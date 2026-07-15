@@ -69,7 +69,7 @@ export function BrandNav({ programs }: { programs: Program[] }) {
                 href={programHref(p)}
                 className={`ds-nav-link${brandForProgram(p).brandKey === activeBrand ? " active" : ""}`}
               >
-                {p.name}
+                {p.kind === "dinner" ? "Saturday Dinners" : p.name}
               </Link>
             ))
           : STATIC_LINKS.map((l) => (

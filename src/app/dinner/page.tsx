@@ -85,7 +85,8 @@ export default async function DinnerPage({
   if (!dinner) {
     return (
       <div data-brand={brand.brandKey} className="ds-page">
-        <header
+        <Reveal
+          as="header"
           className="ds-wrap"
           style={{
             padding: "clamp(36px, 7vw, 80px) 0 clamp(20px,3vw,36px)",
@@ -112,11 +113,12 @@ export default async function DinnerPage({
               margin: "18px 0 0",
             }}
           >
-            {brand.name}
+            Saturday Dinners
           </h1>
-        </header>
+        </Reveal>
         <div className="ds-wrap" style={{ paddingBottom: 60 }}>
-          <div
+          <Reveal
+            delay={1}
             className="ds-card mx-auto max-w-xl text-center"
             style={{ padding: 28 }}
           >
@@ -124,7 +126,7 @@ export default async function DinnerPage({
               The next dinner date isn&apos;t posted yet — check back soon or
               join the newsletter.
             </p>
-          </div>
+          </Reveal>
         </div>
 
         {programId && (
