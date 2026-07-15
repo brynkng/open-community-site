@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 // alongside it (resolves the former "desktop reuses the mobile clip" follow-up).
 const MOBILE_SRC = "/media/dinner-mobile.mp4";
 const DESKTOP_SRC = "/media/dinner-bg.mp4";
-const POSTER = "/media/dinner-poster.jpg";
+const MOBILE_POSTER = "/media/dinner-poster-mobile.jpg";
+const DESKTOP_POSTER = "/media/dinner-poster-desktop.jpg";
 
 /**
  * Full-bleed background for the dinner hero: a muted, looping, autoplaying video
@@ -15,6 +16,7 @@ const POSTER = "/media/dinner-poster.jpg";
  */
 export function DinnerBackground() {
   const [src, setSrc] = useState<string | null>(null);
+  const [poster, setPoster] = useState(MOBILE_POSTER);
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -22,7 +24,10 @@ export function DinnerBackground() {
     setReduceMotion(reduce.matches);
 
     const wide = window.matchMedia("(min-width: 640px)");
-    const pick = () => setSrc(wide.matches ? DESKTOP_SRC : MOBILE_SRC);
+    const pick = () => {
+      setSrc(wide.matches ? DESKTOP_SRC : MOBILE_SRC);
+      setPoster(wide.matches ? DESKTOP_POSTER : MOBILE_POSTER);
+    };
     pick();
     wide.addEventListener("change", pick);
     return () => wide.removeEventListener("change", pick);
@@ -32,7 +37,7 @@ export function DinnerBackground() {
     <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden bg-ink">
       {reduceMotion || !src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={POSTER} alt="" className="h-full w-full object-cover" />
+        <img src={poster} alt="" className="h-full w-full object-cover" />
       ) : (
         <video
           key={src}
@@ -42,7 +47,7 @@ export function DinnerBackground() {
           loop
           playsInline
           preload="auto"
-          poster={POSTER}
+          poster={poster}
           src={src}
         />
       )}
