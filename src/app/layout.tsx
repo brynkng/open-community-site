@@ -1,8 +1,40 @@
 import type { Metadata, Viewport } from "next";
-import Link from "next/link";
+import {
+  Alfa_Slab_One,
+  Archivo,
+  Bricolage_Grotesque,
+  Karla,
+} from "next/font/google";
 import "./globals.css";
 import { getActivePrograms } from "@/lib/programs";
 import type { Program } from "@/db/schema";
+import { BrandNav } from "@/components/BrandNav";
+import { SectionFooter } from "@/components/SectionFooter";
+
+// Four brand fonts (KTD2): self-hosted via next/font/google, exposed as CSS
+// vars consumed by globals.css (`--brand-font`) and components that need a
+// specific brand's display face directly.
+const fontSS = Alfa_Slab_One({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-ss",
+  display: "swap",
+});
+const fontNB = Archivo({
+  subsets: ["latin"],
+  variable: "--font-nb",
+  display: "swap",
+});
+const fontFT = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-ft",
+  display: "swap",
+});
+const fontBody = Karla({
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Sidewalk Story",
@@ -34,12 +66,6 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-function programHref(p: Program): string {
-  if (p.kind === "dinner") return `/dinner?program=${p.slug}`;
-  if (p.kind === "ride") return `/rides?program=${p.slug}`;
-  return `/trips?program=${p.slug}`;
-}
-
 async function safePrograms(): Promise<Program[]> {
   try {
     return await getActivePrograms();
@@ -55,71 +81,20 @@ export default async function RootLayout({
 }) {
   const programs = await safePrograms();
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`${fontSS.variable} ${fontNB.variable} ${fontFT.variable} ${fontBody.variable}`}
+    >
       <body>
-        <header
-          className="sticky top-0 z-40 border-b border-black/5 bg-white/90 backdrop-blur"
-          style={{ paddingTop: "env(safe-area-inset-top)" }}
-        >
-          <nav className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-            <Link
-              href="/"
-              className="shrink-0 text-base font-bold text-brand sm:text-lg"
-            >
-              Sidewalk Story
-            </Link>
-            <div className="no-scrollbar flex flex-1 items-center gap-4 overflow-x-auto text-sm font-medium text-stone-700">
-              {programs.length > 0 ? (
-                programs.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={programHref(p)}
-                    className="shrink-0 whitespace-nowrap hover:opacity-70"
-                    style={{ color: p.accentColor }}
-                  >
-                    {p.name}
-                  </Link>
-                ))
-              ) : (
-                <>
-                  <Link
-                    href="/dinner"
-                    className="shrink-0 whitespace-nowrap hover:text-brand"
-                  >
-                    Saturday Dinner
-                  </Link>
-                  <Link
-                    href="/rides"
-                    className="shrink-0 whitespace-nowrap hover:text-brand"
-                  >
-                    Sunday Rides
-                  </Link>
-                  <Link
-                    href="/trips"
-                    className="shrink-0 whitespace-nowrap hover:text-brand"
-                  >
-                    Trips
-                  </Link>
-                </>
-              )}
-              <Link
-                href="/#newsletter"
-                className="shrink-0 whitespace-nowrap hover:text-brand"
-              >
-                Newsletter
-              </Link>
-            </div>
-          </nav>
-        </header>
+        <BrandNav programs={programs} />
+        {/*
+          Keep the existing constrained container so admin/dinner/rides/trips
+          pages (unmodified by this slice) don't shift; the landing rebuild
+          breaks out of it per-panel with a full-bleed technique instead of
+          removing the container here.
+        */}
         <main className="mx-auto max-w-5xl px-4 py-8 sm:py-10">{children}</main>
-        <footer className="mx-auto max-w-5xl px-4 py-10 text-center text-sm text-stone-500">
-          <p>Everyone is welcome at our table and on the road.</p>
-          <p className="mt-1">
-            <Link href="/admin" className="hover:text-brand">
-              Organizer sign in
-            </Link>
-          </p>
-        </footer>
+        <SectionFooter />
       </body>
     </html>
   );
