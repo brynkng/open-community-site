@@ -6,6 +6,7 @@ Durable learning docs that ground future `/ce-brainstorm` and `/ce-plan` work. T
 - [Data model & database](./data-model-and-database.md) — D1 + Drizzle schema, tables, indexes, migrations.
 - [Programs layer](./programs-layer-architecture.md) — branded event series with no code (`kind` + `programId`).
 - [Recurring event series](./recurring-event-series-materializer.md) — weekly template + idempotent daily cron materializer (one row per dated instance so RSVP/reminder/IG code is untouched); one-offs are `series_id` NULL.
+- [Converting a one-off event into a recurring series](./converting-a-one-off-event-into-a-recurring-series.md) — the "Make recurring" edit toggle sets the existing row's `seriesId` + keeps its date BEFORE materializing, so `materializeOne`'s `(seriesId, date)` dedupe absorbs the seed row instead of duplicating it; edit forms stay separate from create forms.
 - [App architecture & integrations](./app-architecture-and-integrations.md) — App Router, server actions, auth, Instagram/Resend/R2/KV/cron.
 - [Coding conventions](./coding-conventions.md) — patterns to follow when adding features.
 - [Design prototype porting](./design-prototype-porting.md) — porting Claude Design (claude.ai/design) updates into the live app: handoff-snapshot diffing, `--ss-*`→`--brand-*` token mapping, inline-styles vs media queries.
