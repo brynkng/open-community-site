@@ -332,7 +332,7 @@ body {
    copy goes full width, the video sits un-nudged, and the scrim becomes
    bottom-weighted (a "lower-band" feel) so the text still reads over it. */
 .ds-dinner-video {
-  transform: translateX(17%);
+  transform: none;
 }
 .ds-dinner-scrim {
   background: linear-gradient(
