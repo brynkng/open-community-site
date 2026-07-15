@@ -11,6 +11,7 @@ import type { Program } from "@/db/schema";
 import { siteUrl, absoluteUrl, OG_IMAGE_DEFAULT } from "@/lib/seo";
 import { BrandNav } from "@/components/BrandNav";
 import { SectionFooter } from "@/components/SectionFooter";
+import { RoutePrefetcher } from "@/components/RoutePrefetcher";
 
 // Four brand fonts (KTD2): self-hosted via next/font/google, exposed as CSS
 // vars consumed by globals.css (`--brand-font`) and components that need a
@@ -110,6 +111,7 @@ export default async function RootLayout({
     >
       <body>
         <BrandNav programs={programs} />
+        <RoutePrefetcher routes={["/", "/dinner", "/rides", "/trips"]} />
         {/*
           Keep the existing constrained container so admin/dinner/rides/trips
           pages (unmodified by this slice) don't shift; the landing rebuild
