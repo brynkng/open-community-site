@@ -341,6 +341,56 @@ body {
   margin: 0 0 22px;
 }
 
+/* ---------- route strip: vertical timeline on phones ----------
+   Desktop keeps the 4-across horizontal timeline (inline styles in
+   rides/page.tsx: dots + rightward dashed connectors). Below 640px the
+   auto-fit grid wraps to two columns, which dangles each row's trailing
+   connector into empty space and zig-zags the reading order. On phones we
+   collapse to a single column and turn the connectors into one continuous
+   vertical dashed rail — the natural mobile pattern for a linear route
+   (0 → 3 → 10 → 20 mi). Overrides here use !important to beat the component's
+   inline styles. */
+@media (max-width: 639px) {
+  .ds-route-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .ds-route-stop {
+    position: relative;
+    padding: 0 0 22px 30px !important;
+  }
+  .ds-route-stop:last-child {
+    padding-bottom: 0 !important;
+  }
+  /* empty flex row once the dot is lifted onto the rail — reclaim its space */
+  .ds-route-dotrow {
+    margin-bottom: 0 !important;
+    min-height: 0;
+  }
+  .ds-route-dot {
+    position: absolute !important;
+    left: 0;
+    top: 2px;
+  }
+  .ds-route-connector {
+    display: none !important;
+  }
+  /* continuous dashed rail linking each dot down to the next stop */
+  .ds-route-stop:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 18px;
+    bottom: 2px;
+    width: 3px;
+    opacity: 0.6;
+    background: repeating-linear-gradient(
+      180deg,
+      var(--brand-accent-2, var(--ds-muted)) 0 8px,
+      transparent 8px 14px
+    );
+  }
+}
+
 /* ---------- landing panels ---------- */
 .ds-land-panel {
   position: relative;

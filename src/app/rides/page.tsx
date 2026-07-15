@@ -293,6 +293,7 @@ export default async function RidesPage({
               The route
             </p>
             <div
+              className="ds-route-grid"
               style={{
                 display: "grid",
                 gridTemplateColumns:
@@ -303,9 +304,11 @@ export default async function RidesPage({
               {ROUTE_STOPS.map(([name, sub, mi], i) => (
                 <div
                   key={name}
+                  className="ds-route-stop"
                   style={{ position: "relative", padding: "0 14px 0 0" }}
                 >
                   <div
+                    className="ds-route-dotrow"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -314,6 +317,7 @@ export default async function RidesPage({
                     }}
                   >
                     <span
+                      className="ds-route-dot"
                       style={{
                         width: 14,
                         height: 14,
@@ -330,6 +334,7 @@ export default async function RidesPage({
                     />
                     {i < ROUTE_STOPS.length - 1 && (
                       <span
+                        className="ds-route-connector"
                         style={{
                           flex: 1,
                           height: 3,
