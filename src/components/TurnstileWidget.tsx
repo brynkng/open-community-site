@@ -15,6 +15,8 @@ declare global {
           callback?: (token: string) => void;
           "expired-callback"?: () => void;
           "error-callback"?: () => void;
+          appearance?: "always" | "execute" | "interaction-only";
+          size?: "normal" | "flexible" | "compact";
         },
       ) => string;
       remove: (widgetId: string) => void;
@@ -70,6 +72,10 @@ export function TurnstileWidget({
         callback: handleToken,
         "expired-callback": handleExpireOrError,
         "error-callback": handleExpireOrError,
+        // Stay invisible unless the visitor actually has to solve a challenge.
+        // On the common managed-pass path the widget renders nothing (no
+        // "Success!" box) while still delivering a token via `callback`.
+        appearance: "interaction-only",
       });
     }
 
