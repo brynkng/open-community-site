@@ -42,7 +42,7 @@ const BRAND_BY_KIND: Record<Program["kind"], BrandTokens> = {
   },
   trip: {
     brandKey: "ft",
-    name: "Field Trip Philly",
+    name: "Trips",
     tagline: "Camping & hikes",
     displayFontVar: "var(--font-ft)",
     accent: "#2E5339",

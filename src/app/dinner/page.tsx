@@ -201,21 +201,6 @@ export default async function DinnerPage({
           }}
         >
           <Reveal>
-            <Image
-              src="/brands/sidewalk-story.png"
-              alt="Sidewalk Story"
-              width={140}
-              height={140}
-              className="ds-float-slow"
-              style={{
-                width: "min(160px, 45%)",
-                height: "auto",
-                marginBottom: 16,
-                mixBlendMode: "multiply",
-                background: "#fff",
-                borderRadius: 12,
-              }}
-            />
             <h1
               style={{
                 fontFamily: brand.displayFontVar,

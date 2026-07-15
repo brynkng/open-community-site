@@ -45,7 +45,7 @@ body {
 }
 
 /* =========================================================================
-   Design system — Sidewalk Story / Nomad Bike Philly / Field Trip Philly
+   Design system — Sidewalk Story / Nomad Bike Philly / Trips
    Ported from the design prototype's styles.css (source: design_handoff/).
    Everything below is namespaced with a `ds-` prefix (classes) and `--ds-`/
    `--brand-` prefixes (custom properties) so it coexists with the existing
