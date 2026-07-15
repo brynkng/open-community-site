@@ -3,7 +3,7 @@ import { and, asc, desc, eq, gte } from "drizzle-orm";
 import { getDb } from "@/db";
 import { dinners, rides, trips, type Program } from "@/db/schema";
 import { getActivePrograms } from "@/lib/programs";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatTime } from "@/lib/utils";
 import { brandForProgram, type BrandKey } from "@/lib/brands";
 import { LandingPanel } from "@/components/LandingPanel";
 import { DinnerPanel } from "@/components/DinnerPanel";
@@ -117,7 +117,7 @@ async function whenForProgram(p: Program): Promise<string | null> {
       .orderBy(asc(dinners.date))
       .limit(1);
     return d
-      ? `${formatDate(d.date)}${d.startTime ? ` · ${d.startTime}` : ""}`
+      ? `${formatDate(d.date)}${d.startTime ? ` · ${formatTime(d.startTime)}` : ""}`
       : null;
   }
   if (p.kind === "ride") {
@@ -134,7 +134,7 @@ async function whenForProgram(p: Program): Promise<string | null> {
       .orderBy(asc(rides.date))
       .limit(1);
     return r
-      ? `${formatDate(r.date)}${r.startTime ? ` · ${r.startTime}` : ""}`
+      ? `${formatDate(r.date)}${r.startTime ? ` · ${formatTime(r.startTime)}` : ""}`
       : null;
   }
   // trip

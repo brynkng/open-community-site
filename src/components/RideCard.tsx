@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Ride } from "@/db/schema";
 import { env } from "@/lib/env";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatTime, kmToMiles } from "@/lib/utils";
 
 const paceLabel: Record<string, string> = {
   social: "Social pace",
@@ -38,7 +38,7 @@ export function RideCard({
         style={{ color: "var(--brand-accent, inherit)" }}
       >
         {formatDate(ride.date)}
-        {ride.startTime ? ` · ${ride.startTime}` : ""}
+        {ride.startTime ? ` · ${formatTime(ride.startTime)}` : ""}
       </p>
       <h3 className="mt-1 text-lg font-bold">{ride.title}</h3>
       <div className="mt-2 flex flex-wrap gap-2 text-xs">
@@ -47,7 +47,7 @@ export function RideCard({
             className="ds-chip"
             style={{ background: "rgba(43,33,24,.07)" }}
           >
-            {ride.distanceKm} km
+            {kmToMiles(ride.distanceKm)} mi
           </span>
         ) : null}
         {ride.paceLevel ? (

@@ -4,7 +4,7 @@ import { getDb } from "@/db";
 import { rsvps, rides, dinners } from "@/db/schema";
 import { authorizeCron } from "@/lib/cron";
 import { sendEmail, baseTemplate } from "@/lib/email";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatTime } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +48,7 @@ export async function GET(req: Request) {
         kind: "ride" as const,
         id: r.id,
         title: r.title,
-        when: r.startTime ?? "",
+        when: r.startTime ? formatTime(r.startTime) : "",
         where: r.meetLocation,
       })),
     ...upcomingDinners
@@ -57,7 +57,7 @@ export async function GET(req: Request) {
         kind: "dinner" as const,
         id: d.id,
         title: d.title,
-        when: d.startTime ?? "",
+        when: d.startTime ? formatTime(d.startTime) : "",
         where: d.location,
       })),
   ];

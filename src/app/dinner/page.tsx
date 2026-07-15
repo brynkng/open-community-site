@@ -7,7 +7,7 @@ import {
   getProgramById,
   defaultProgramIdForKind,
 } from "@/lib/programs";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatTime } from "@/lib/utils";
 import { brandForProgram, brandForKind } from "@/lib/brands";
 import { loadCommunitySections } from "@/lib/communitySections";
 import { RsvpWidget } from "@/components/RsvpWidget";
@@ -305,7 +305,7 @@ export default async function DinnerPage({
                 </p>
                 <p style={{ margin: "6px 0 0", fontSize: 14.5, opacity: 0.9 }}>
                   {formatDate(dinner.date)}
-                  {dinner.startTime ? ` · ${dinner.startTime}` : ""}
+                  {dinner.startTime ? ` · ${formatTime(dinner.startTime)}` : ""}
                   {dinner.location ? ` · ${dinner.location}` : ""}
                   {dinner.capacity
                     ? ` · ${Math.max(0, dinner.capacity - headcount)} seats left`

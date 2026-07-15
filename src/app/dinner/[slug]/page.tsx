@@ -3,24 +3,38 @@ import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { rsvps } from "@/db/schema";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatTime } from "@/lib/utils";
 import { RsvpForm } from "@/components/RsvpForm";
 import { ProgramBadge } from "@/components/ProgramBadge";
 import { JsonLd } from "@/components/JsonLd";
 import { findDinnerBySlug } from "@/lib/dinner-permalink";
-import { pageMetadata, ogImageForProgram, absoluteUrl, eventJsonLd } from "@/lib/seo";
+import {
+  pageMetadata,
+  ogImageForProgram,
+  absoluteUrl,
+  eventJsonLd,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
 type Params = Promise<{ slug: string }>;
 
-export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Params;
+}): Promise<Metadata> {
   const { slug } = await params;
   const found = await findDinnerBySlug(slug);
   if (!found) {
     // notFound() in the page component governs the 404; return a minimal
     // default here so generateMetadata never throws.
-    return pageMetadata({ title: "Dinner", description: "Saturday community dinner.", path: `/dinner/${slug}`, kind: "dinner" });
+    return pageMetadata({
+      title: "Dinner",
+      description: "Saturday community dinner.",
+      path: `/dinner/${slug}`,
+      kind: "dinner",
+    });
   }
   const { dinner, program } = found;
   const title = `${dinner.title} — ${formatDate(dinner.date)}`;
@@ -55,7 +69,9 @@ export default async function DinnerDetail({ params }: { params: Params }) {
       <JsonLd
         data={eventJsonLd({
           name: dinner.title,
-          startDate: dinner.startTime ? `${dinner.date}T${dinner.startTime}` : dinner.date,
+          startDate: dinner.startTime
+            ? `${dinner.date}T${dinner.startTime}`
+            : dinner.date,
           description: dinner.description,
           location: dinner.location,
           status: dinner.status,
@@ -66,10 +82,12 @@ export default async function DinnerDetail({ params }: { params: Params }) {
       />
 
       <header>
-        <div className="mb-2"><ProgramBadge program={program} /></div>
+        <div className="mb-2">
+          <ProgramBadge program={program} />
+        </div>
         <p className="text-sm font-semibold uppercase tracking-wide text-brand">
           {formatDate(dinner.date)}
-          {dinner.startTime ? ` · ${dinner.startTime}` : ""}
+          {dinner.startTime ? ` · ${formatTime(dinner.startTime)}` : ""}
         </p>
         <h1 className="mt-1 text-3xl font-extrabold">{dinner.title}</h1>
         {dinner.status === "cancelled" && (
@@ -78,7 +96,11 @@ export default async function DinnerDetail({ params }: { params: Params }) {
           </p>
         )}
         <div className="mt-3 flex flex-wrap gap-2 text-sm text-stone-600">
-          {dinner.location && <span className="rounded-full bg-stone-100 px-3 py-1">📍 {dinner.location}</span>}
+          {dinner.location && (
+            <span className="rounded-full bg-stone-100 px-3 py-1">
+              📍 {dinner.location}
+            </span>
+          )}
           <span className="rounded-full bg-brand-light/50 px-3 py-1 text-brand-dark">
             {headcount} {headcount === 1 ? "person" : "people"} coming
           </span>
@@ -91,7 +113,9 @@ export default async function DinnerDetail({ params }: { params: Params }) {
       </header>
 
       {dinner.description && (
-        <div className="whitespace-pre-line leading-relaxed text-stone-700">{dinner.description}</div>
+        <div className="whitespace-pre-line leading-relaxed text-stone-700">
+          {dinner.description}
+        </div>
       )}
 
       {dinner.status !== "cancelled" && (

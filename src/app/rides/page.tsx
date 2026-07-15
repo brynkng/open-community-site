@@ -4,7 +4,7 @@ import { and, asc, desc, eq, gte, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
 import { rides, rsvps } from "@/db/schema";
 import { getProgramBySlug, defaultProgramIdForKind } from "@/lib/programs";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatTime } from "@/lib/utils";
 import { brandForProgram, brandForKind } from "@/lib/brands";
 import { loadCommunitySections } from "@/lib/communitySections";
 import { RideCard } from "@/components/RideCard";
@@ -126,17 +126,15 @@ export default async function RidesPage({
         >
           <Reveal>
             <Image
-              src="/brands/nomadic-bike-philly.jpg"
+              src="/brands/nomadic-bike-philly.png"
               alt={brand.name}
-              width={140}
-              height={140}
+              width={320}
+              height={320}
               className="ds-float-slow"
               style={{
-                width: "min(160px, 45%)",
+                width: "min(320px, 72vw)",
                 height: "auto",
                 marginBottom: 16,
-                borderRadius: "50%",
-                boxShadow: "var(--ds-shadow)",
               }}
             />
             <h1
@@ -240,7 +238,9 @@ export default async function RidesPage({
                     style={{ margin: "6px 0 0", fontSize: 14.5, opacity: 0.9 }}
                   >
                     {formatDate(nextRide.date)}
-                    {nextRide.startTime ? ` · ${nextRide.startTime}` : ""}
+                    {nextRide.startTime
+                      ? ` · ${formatTime(nextRide.startTime)}`
+                      : ""}
                     {nextRide.meetLocation ? ` · ${nextRide.meetLocation}` : ""}
                   </p>
                 </div>

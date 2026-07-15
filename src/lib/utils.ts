@@ -27,6 +27,29 @@ export function formatDate(iso: string): string {
   });
 }
 
+/** Format a 24h "HH:MM" time string as e.g. "6:30 PM". Returns input unchanged if unparseable. */
+export function formatTime(hhmm: string): string {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim());
+  if (!m) return hhmm;
+  const h = Number(m[1]);
+  const min = m[2];
+  const period = h < 12 ? "AM" : "PM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${min} ${period}`;
+}
+
+const KM_PER_MILE = 1.60934;
+
+/** Convert stored kilometers to whole miles for display. */
+export function kmToMiles(km: number): number {
+  return Math.round(km / KM_PER_MILE);
+}
+
+/** Convert user-entered miles to kilometers for storage. */
+export function milesToKm(miles: number): number {
+  return Math.round(miles * KM_PER_MILE);
+}
+
 export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }

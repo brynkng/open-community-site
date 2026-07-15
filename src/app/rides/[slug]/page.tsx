@@ -4,25 +4,43 @@ import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { rides, rsvps } from "@/db/schema";
 import { env } from "@/lib/env";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatTime, kmToMiles } from "@/lib/utils";
 import { getProgramById } from "@/lib/programs";
 import { RsvpForm } from "@/components/RsvpForm";
 import { ProgramBadge } from "@/components/ProgramBadge";
 import { JsonLd } from "@/components/JsonLd";
-import { pageMetadata, ogImageForProgram, absoluteUrl, eventJsonLd } from "@/lib/seo";
+import {
+  pageMetadata,
+  ogImageForProgram,
+  absoluteUrl,
+  eventJsonLd,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
 type Params = Promise<{ slug: string }>;
 
-export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Params;
+}): Promise<Metadata> {
   const { slug } = await params;
   const db = getDb();
-  const [ride] = await db.select().from(rides).where(eq(rides.slug, slug)).limit(1);
+  const [ride] = await db
+    .select()
+    .from(rides)
+    .where(eq(rides.slug, slug))
+    .limit(1);
   if (!ride || ride.status === "draft") {
     // notFound() in the page component governs the 404; return a minimal
     // default here so generateMetadata never throws.
-    return pageMetadata({ title: "Ride", description: "Sunday bike ride.", path: `/rides/${slug}`, kind: "ride" });
+    return pageMetadata({
+      title: "Ride",
+      description: "Sunday bike ride.",
+      path: `/rides/${slug}`,
+      kind: "ride",
+    });
   }
   const program = await getProgramById(ride.programId);
   const title = `${ride.title} — ${formatDate(ride.date)}`;
@@ -39,7 +57,11 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function RideDetail({ params }: { params: Params }) {
   const { slug } = await params;
   const db = getDb();
-  const [ride] = await db.select().from(rides).where(eq(rides.slug, slug)).limit(1);
+  const [ride] = await db
+    .select()
+    .from(rides)
+    .where(eq(rides.slug, slug))
+    .limit(1);
   if (!ride || ride.status === "draft") notFound();
 
   const program = await getProgramById(ride.programId);
@@ -59,7 +81,9 @@ export default async function RideDetail({ params }: { params: Params }) {
       <JsonLd
         data={eventJsonLd({
           name: ride.title,
-          startDate: ride.startTime ? `${ride.date}T${ride.startTime}` : ride.date,
+          startDate: ride.startTime
+            ? `${ride.date}T${ride.startTime}`
+            : ride.date,
           description: ride.description,
           location: ride.meetLocation,
           status: ride.status,
@@ -70,14 +94,20 @@ export default async function RideDetail({ params }: { params: Params }) {
 
       {img && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={img} alt={ride.title} className="h-64 w-full rounded-2xl object-cover" />
+        <img
+          src={img}
+          alt={ride.title}
+          className="h-64 w-full rounded-2xl object-cover"
+        />
       )}
 
       <header>
-        <div className="mb-2"><ProgramBadge program={program} /></div>
+        <div className="mb-2">
+          <ProgramBadge program={program} />
+        </div>
         <p className="text-sm font-semibold uppercase tracking-wide text-brand">
           {formatDate(ride.date)}
-          {ride.startTime ? ` · roll out ${ride.startTime}` : ""}
+          {ride.startTime ? ` · roll out ${formatTime(ride.startTime)}` : ""}
         </p>
         <h1 className="mt-1 text-3xl font-extrabold">{ride.title}</h1>
         {ride.status === "cancelled" && (
@@ -86,19 +116,40 @@ export default async function RideDetail({ params }: { params: Params }) {
           </p>
         )}
         <div className="mt-3 flex flex-wrap gap-2 text-sm text-stone-600">
-          {ride.meetLocation && <span className="rounded-full bg-stone-100 px-3 py-1">📍 {ride.meetLocation}</span>}
-          {ride.distanceKm ? <span className="rounded-full bg-stone-100 px-3 py-1">{ride.distanceKm} km</span> : null}
-          {ride.paceLevel && <span className="rounded-full bg-stone-100 px-3 py-1 capitalize">{ride.paceLevel} pace</span>}
-          <span className="rounded-full bg-brand-light/50 px-3 py-1 text-brand-dark">{headcount} riding</span>
+          {ride.meetLocation && (
+            <span className="rounded-full bg-stone-100 px-3 py-1">
+              📍 {ride.meetLocation}
+            </span>
+          )}
+          {ride.distanceKm ? (
+            <span className="rounded-full bg-stone-100 px-3 py-1">
+              {kmToMiles(ride.distanceKm)} mi
+            </span>
+          ) : null}
+          {ride.paceLevel && (
+            <span className="rounded-full bg-stone-100 px-3 py-1 capitalize">
+              {ride.paceLevel} pace
+            </span>
+          )}
+          <span className="rounded-full bg-brand-light/50 px-3 py-1 text-brand-dark">
+            {headcount} riding
+          </span>
         </div>
       </header>
 
       {ride.description && (
-        <div className="whitespace-pre-line leading-relaxed text-stone-700">{ride.description}</div>
+        <div className="whitespace-pre-line leading-relaxed text-stone-700">
+          {ride.description}
+        </div>
       )}
 
       {ride.routeUrl && (
-        <a href={ride.routeUrl} target="_blank" rel="noreferrer" className="btn-secondary">
+        <a
+          href={ride.routeUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="btn-secondary"
+        >
           View the route ↗
         </a>
       )}
